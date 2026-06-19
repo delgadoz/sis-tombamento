@@ -1,0 +1,132 @@
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+	min-height: 100vh;
+	background: linear-gradient(
+		rgba(0,0,0,0.6),
+		rgba(0,0,0,0.6)
+	),
+	url("../imgs/background.jpg") no-repeat center center;
+	background-size: cover;
+	background-attachment: fixed; 
+	color: #fff;
+}
+		
+#a_creditos {
+  color: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: color 0.3s ease, text-decoration 0.3s ease;
+}
+
+footer {         
+	margin-top: 25px;
+	font-size: 0.8rem;
+	text-align:center;
+}
+
+/* ===== TOPO / MENU ===== */
+header {
+	width: 100%;
+	background: rgba(0, 0, 0, 0.85);
+	padding: 15px 30px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	box-shadow: 0 2px 10px rgba(0,0,0,0.6);
+}
+
+header h1 {
+	font-size: 1.4rem;
+}
+
+nav ul {
+	list-style: none;
+	display: flex;
+	gap: 20px;
+}
+
+nav a {
+	color: #fff;
+	text-decoration: none;
+	font-weight: bold;
+	font-size: 0.95rem;
+	transition: 0.2s;
+}
+
+nav a:hover {
+	color: #ff9800;
+}
+
+/* ===== SUBMENU ===== */
+nav li.has-submenu {
+	position: relative;
+}
+
+nav li.has-submenu > a::after {
+	content: ' ▾';
+	font-size: 0.75rem;
+}
+
+nav ul.submenu {
+	display: none !important;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	background: rgba(0, 0, 0, 0.92);
+	border-top: 2px solid #ff9800;
+	border-radius: 0 0 6px 6px;
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+	min-width: 160px;
+	flex-direction: column;
+	gap: 0;
+	z-index: 100;
+	padding: 6px 0;
+}
+
+nav li.has-submenu:hover ul.submenu,
+nav li.has-submenu.active ul.submenu {
+	display: flex !important;
+}
+
+nav ul.submenu li {
+	width: 100%;
+}
+
+nav ul.submenu li a {
+	display: block;
+	padding: 9px 18px;
+	font-size: 0.9rem;
+	font-weight: normal;
+	color: #ddd;
+	transition: background 0.2s, color 0.2s;
+	white-space: nowrap;
+}
+
+nav ul.submenu li a:hover {
+	background: rgba(255, 152, 0, 0.15);
+	color: #ff9800;
+}
+
+@media (max-width: 768px) {
+	nav ul {
+		gap: 12px;
+	}
+
+	main {
+		padding: 20px;
+	}
+}
+
+nav ul {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 10px;
+}
