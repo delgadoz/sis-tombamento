@@ -35,7 +35,12 @@ if (!isset($_SESSION['usuario'])) {
 					<li><a href="cadastrar-unidade">Cadastrar Unidade</a></li>
 				</ul>
 			</li> |
-			<li><a href="#">Relatórios</a></li> |
+			<li class="has-submenu">
+				<a href="#">Relatórios</a>
+				<ul class="submenu">
+					<li><a href="relatorio-bens-moveis">Bens Móveis</a></li>
+				</ul>
+			</li> |
 			<li><a href="configuracoes">Configurações</a></li> |
 			<li><a href="logout">Sair</a></li>
 		</ul>

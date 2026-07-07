@@ -13,3 +13,7 @@ build/
 sala.py
 screenshot.png
 uploads/bens/
+painel/vendor
+painel/backups
+painel/composer.lock
+painel/composer.json

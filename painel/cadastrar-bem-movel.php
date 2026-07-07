@@ -90,7 +90,7 @@ try {
             position: relative;
         }
 
-        .group-box legend {
+        .group-box .legend {
             position: absolute;
             top: -13px;
             left: 16px;
@@ -637,7 +637,7 @@ try {
 
                         <div class="form-group">
                             <label for="data_aquisicao">Data de Aquisição</label>
-                            <input type="date" id="data_aquisicao" name="data_aquisicao" required>
+                            <input type="date" id="data_aquisicao" name="data_aquisicao" max="<?= date('Y-m-d') ?>" required>
                         </div>
 
                         <div class="form-group">
@@ -719,6 +719,10 @@ try {
                                     <option value="" disabled selected>Selecione o estado</option>
                                     <option value="Novo">Novo</option>
                                     <option value="Bom">Bom</option>
+									<option value="Regular">Regular</option>
+									<option value="Ruim">Ruim</option>
+									<option value="Depreciado">Depreciado</option>
+									<option value="Inservivel">Inservível</option>
                                 </select>
                             </div>
                         </div>

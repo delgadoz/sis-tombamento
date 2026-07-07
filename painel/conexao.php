@@ -1,4 +1,6 @@
 <?php
+date_default_timezone_set('America/Sao_Paulo');
+
 $host = 'localhost';
 $db   = 'patrimonio';
 $user = 'root';
@@ -18,3 +20,5 @@ try {
 } catch (PDOException $e) {
     die('Erro ao conectar ao banco de dados.');
 }
+
+?>

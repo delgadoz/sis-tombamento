@@ -2,13 +2,11 @@
 session_start();
 require_once 'conexao.php';
 
-// Bloqueia qualquer método que não seja POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: cadastrar-bem-movel');
     exit;
 }
 
-// Redireciona para login se não houver sessão ativa
 if (!isset($_SESSION['usuario'])) {
     header('Location: login');
     exit;
@@ -51,7 +49,8 @@ $grupos_permitidos = [
     'Equipamentos Hospitalares', 'Máquinas e Equipamentos',
     'Veículos', 'Ferramentas', 'Outros'
 ];
-$estados_permitidos = ['Novo', 'Bom'];
+
+$estados_permitidos = ['Novo', 'Bom', 'Regular', 'Ruim', 'Depreciado', 'Inservivel'];
 $tipos_permitidos   = ['gestão anterior', 'aquisição', 'doação'];
 
 // ===== VALIDAÇÕES OBRIGATÓRIAS =====
@@ -85,9 +84,23 @@ if (!$dataObj || $dataObj->format('Y-m-d') !== $data_aquisicao) {
     exit;
 }
 
+$hoje = new DateTime('today');
+if($dataObj > $hoje){
+	$_SESSION['erro'] = 'A data de aquisição não pode ser maior que a data atual.';
+    header('Location: cadastrar-bem-movel');
+    exit;
+}
+
 // Valor numérico positivo
-if (!is_numeric($valor) || (float)$valor < 0) {
-    $_SESSION['erro'] = 'O Custo deve ser um valor numérico positivo.';
+if (!is_numeric($valor)) {
+    $_SESSION['erro'] = 'O campo Custo deve receber um valor numérico.';
+    header('Location: cadastrar-bem-movel');
+    exit;
+}
+
+// Nº tombamento
+if (!is_numeric($numero_tombamento) || (int)$numero_tombamento < 0) {
+    $_SESSION['erro'] = 'O numero de tombamento não pode ser negativo.';
     header('Location: cadastrar-bem-movel');
     exit;
 }

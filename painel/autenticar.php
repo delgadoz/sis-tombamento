@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'conexao.php'; // arquivo de conexão PDO
+require_once 'conexao.php'; 
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: login');
