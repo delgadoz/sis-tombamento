@@ -1,3 +1,14 @@
+<?php 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (!isset($_SESSION['usuario'])) {
+    header('Location: ../../index');
+    exit();
+}
+?>
+
 <header>
 	<nav>
 		<ul>
@@ -24,6 +35,7 @@
 					<li><a href="cadastrar-unidade">Cadastrar Unidade</a></li>
 				</ul>
 			</li> |
+			<li><a href="#">Relatórios</a></li> |
 			<li><a href="configuracoes">Configurações</a></li> |
 			<li><a href="logout">Sair</a></li>
 		</ul>
