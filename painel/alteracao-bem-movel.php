@@ -129,7 +129,7 @@ if (empty($grupo) || !in_array($grupo, $grupos_validos, true)) {
 }
 
 // Estados permitidos
-$estados_validos = ['Novo', 'Bom'];
+$estados_validos = ['Novo', 'Bom', 'Regular', 'Ruim', 'Depreciado', 'Inservivel'];
 if (empty($estado) || !in_array($estado, $estados_validos, true)) {
     $_SESSION['erro'] = 'Estado inválido.';
     header('Location: alterar-bem-movel');

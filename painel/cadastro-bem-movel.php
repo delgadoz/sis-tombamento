@@ -105,8 +105,6 @@ if (!is_numeric($numero_tombamento) || (int)$numero_tombamento < 0) {
     exit;
 }
 
-$valor = number_format((float)$valor, 2, '.', '');
-
 // Whitelist: grupo, estado, tipo
 if (!in_array($grupo, $grupos_permitidos, true)) {
     $_SESSION['erro'] = 'Grupo inválido.';
@@ -204,7 +202,7 @@ if ($tombamento_massa) {
         $stmtT = $pdo->prepare(
             "SELECT numero_tombamento FROM bens_moveis
              WHERE cnpj = :c
-               AND CAST(numero_tombamento AS UNSIGNED) BETWEEN :ini AND :fim"
+               AND numero_tombamento BETWEEN :ini AND :fim"
         );
         $stmtT->bindParam(':c',   $cnpj,     PDO::PARAM_STR);
         $stmtT->bindParam(':ini', $numInicio, PDO::PARAM_INT);
@@ -329,12 +327,19 @@ try {
     $stmt = $pdo->prepare($sql);
 
     // Determina quantos registros serão inseridos
-    $totalInserções = $tombamento_massa ? $quantidade_massa : 1;
-    $numBase        = (int) $numero_tombamento;
+    $total_insercoes = $tombamento_massa ? $quantidade_massa : 1;
+	
+	if($total_insercoes >= 3){
+		$valor = $valor / $total_insercoes;
+	}
+	
+	$valor = number_format((float)$valor, 2, '.', '');
+	
+    $numBase = (int) $numero_tombamento;
 
     $pdo->beginTransaction();
 
-    for ($i = 0; $i < $totalInserções; $i++) {
+    for ($i = 0; $i < $total_insercoes; $i++) {
         $tombAtual = (string) ($numBase + $i);
 
         $stmt->bindParam(':numero_tombamento', $tombAtual,      PDO::PARAM_STR);

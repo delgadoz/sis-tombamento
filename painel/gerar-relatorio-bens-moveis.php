@@ -95,6 +95,7 @@ if (($_POST['subsetor_filtro'] ?? 'todos') === 'descricao') {
 }
 
 // ===== ORDENAÇÃO (whitelist para evitar SQL injection) =====
+
 $colunasOrdenacao = [
     'codigo'     => 'id',
     'tombamento' => 'numero_tombamento',
@@ -122,6 +123,15 @@ $bens = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $dataEmissao = date('d/m/Y H:i');
 $totalRegistros = count($bens);
 $valorTotal = array_sum(array_column($bens, 'valor'));
+
+// ===== MARCA D'ÁGUA (brasão da prefeitura) =====
+$caminhoLogo = __DIR__ . '/imgs/brasao.png';
+$marcaDaguaBase64 = '';
+if (file_exists($caminhoLogo)) {
+    $tipoImagem = mime_content_type($caminhoLogo);
+    $conteudoImagem = file_get_contents($caminhoLogo);
+    $marcaDaguaBase64 = 'data:' . $tipoImagem . ';base64,' . base64_encode($conteudoImagem);
+}
 
 ob_start();
 ?>
@@ -221,12 +231,34 @@ ob_start();
             padding: 20px;
             color: #888;
         }
+
+        .marca-dagua {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 480px;
+            margin-left: -240px;
+            margin-top: -240px;
+            opacity: 0.09;
+            z-index: -1;
+        }
+
+        .marca-dagua img {
+            width: 100%;
+            display: block;
+        }
     </style>
 </head>
 <body>
 
+    <?php if ($marcaDaguaBase64): ?>
+        <div class="marca-dagua">
+            <img src="<?= $marcaDaguaBase64 ?>" alt="">
+        </div>
+    <?php endif; ?>
+
     <header>
-        <h1>Prefeitura Municipal de Caraúbas</h1>
+        <h1>Prefeitura Municipal de Caraúbas - PB</h1>
         <h2>Relatório de Bens Móveis</h2>
         <hr>
     </header>

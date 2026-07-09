@@ -518,7 +518,7 @@ try {
 
                 <!-- ===== BUSCA POR TOMBAMENTO ===== -->
                 <div class="group-box">
-                    <span class="legend">🔍 Buscar Bem</span>
+                    <span class="legend">🔍 Buscar Patrimônio</span>
                     <div class="form-grid">
 
                         <div class="form-group full-width">
@@ -654,6 +654,10 @@ try {
                                         <option value="" disabled selected>Selecione o estado</option>
                                         <option value="Novo">Novo</option>
                                         <option value="Bom">Bom</option>
+										<option value="Regular">Regular</option>
+										<option value="Ruim">Ruim</option>
+										<option value="Depreciado">Depreciado</option>
+										<option value="Inservivel">Inservível</option>
                                     </select>
                                 </div>
                             </div>
@@ -795,7 +799,7 @@ try {
 
                     if (!data || !data.id) {
                         buscaInfo.className = 'busca-info nao-encontrado';
-                        buscaInfo.textContent = '❌ Bem não encontrado. Verifique o número de tombamento.';
+                        buscaInfo.textContent = '❌ Patrimônio não encontrado. Verifique o número de tombamento.';
                         camposBem.classList.remove('ativo');
                         btnSubmit.disabled = true;
                         btnExcluir.disabled = true;
@@ -807,7 +811,7 @@ try {
                     preencherFormulario(data);
 
                     buscaInfo.className = 'busca-info encontrado';
-                    buscaInfo.textContent = '✅ Bem encontrado! Edite os campos abaixo e salve as alterações.';
+                    buscaInfo.textContent = '✅ Patrimônio encontrado! Edite os campos abaixo e salve as alterações.';
                     camposBem.classList.add('ativo');
                     btnSubmit.disabled = false;
                     btnExcluir.disabled = false;

@@ -994,7 +994,7 @@ try {
             }
 
             // Garante que o valor oculto está preenchido
-            if (!valorHidden.value || parseFloat(valorHidden.value) <= 0) {
+            if (!valorHidden.value || parseFloat(valorHidden.value) < 0) {
                 e.preventDefault();
                 valorDisplay.focus();
                 return;
