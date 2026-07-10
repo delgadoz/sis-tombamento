@@ -16,17 +16,13 @@ $nome_completo = $_SESSION['nome'];
 $stmtGrupos = $pdo->query("SELECT DISTINCT grupo FROM bens_moveis WHERE grupo <> '' ORDER BY grupo ASC");
 $grupos = $stmtGrupos->fetchAll(PDO::FETCH_COLUMN);
 
-// Unidade: tabela própria
-$stmtUnidades = $pdo->query("SELECT descricao FROM unidades ORDER BY descricao ASC");
-$unidades = $stmtUnidades->fetchAll(PDO::FETCH_COLUMN);
-
 // Setor: tabela própria
 $stmtSetores = $pdo->query("SELECT descricao FROM setores ORDER BY descricao ASC");
 $setores = $stmtSetores->fetchAll(PDO::FETCH_COLUMN);
 
-// SubSetor: tabela própria
-$stmtSubsetores = $pdo->query("SELECT descricao FROM subsetores ORDER BY descricao ASC");
-$subsetores = $stmtSubsetores->fetchAll(PDO::FETCH_COLUMN);
+// SubSetor e Unidade agora são carregados dinamicamente via AJAX
+// (buscar-subsetores.php e buscar-unidades.php), de acordo com o
+// Setor/SubSetor selecionado, então não são mais pré-carregados aqui.
 ?>
 
 <!DOCTYPE html>
@@ -354,10 +350,7 @@ $subsetores = $stmtSubsetores->fetchAll(PDO::FETCH_COLUMN);
                         <div class="campo-selecao">
                             <div class="select-wrapper">
                                 <select name="subsetor_valor" disabled>
-                                    <option value="" disabled selected>Selecione...</option>
-                                    <?php foreach ($subsetores as $subsetor): ?>
-                                        <option value="<?= htmlspecialchars($subsetor) ?>"><?= htmlspecialchars($subsetor) ?></option>
-                                    <?php endforeach; ?>
+                                    <option value="" disabled selected>Selecione um setor primeiro...</option>
                                 </select>
                             </div>
                         </div>
@@ -379,10 +372,7 @@ $subsetores = $stmtSubsetores->fetchAll(PDO::FETCH_COLUMN);
                         <div class="campo-selecao">
                             <div class="select-wrapper">
                                 <select name="unidade_valor" disabled>
-                                    <option value="" disabled selected>Selecione...</option>
-                                    <?php foreach ($unidades as $unidade): ?>
-                                        <option value="<?= htmlspecialchars($unidade) ?>"><?= htmlspecialchars($unidade) ?></option>
-                                    <?php endforeach; ?>
+                                    <option value="" disabled selected>Selecione um subsetor primeiro...</option>
                                 </select>
                             </div>
                         </div>
@@ -469,6 +459,69 @@ $subsetores = $stmtSubsetores->fetchAll(PDO::FETCH_COLUMN);
             grupo.querySelectorAll('input[type="radio"]').forEach(radio => {
                 radio.addEventListener('change', () => atualizarCampo(radio));
             });
+        });
+
+        // ===== CASCATA SETOR -> SUBSETOR -> UNIDADE =====
+
+        const OPCAO_VAZIA = '<option value="" disabled selected>Selecione...</option>';
+
+        const selectSetor    = document.querySelector('select[name="setor_valor"]');
+        const selectSubsetor = document.querySelector('select[name="subsetor_valor"]');
+        const selectUnidade  = document.querySelector('select[name="unidade_valor"]');
+
+        function resetarSelect(select, textoPlaceholder) {
+            select.innerHTML = `<option value="" disabled selected>${textoPlaceholder}</option>`;
+        }
+
+        function preencherSelect(select, itens) {
+            select.innerHTML = OPCAO_VAZIA;
+            itens.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.descricao;
+                option.textContent = item.descricao;
+                select.appendChild(option);
+            });
+        }
+
+        // Busca os subsetores pertencentes ao setor informado
+        async function popularSubsetores(setor) {
+            resetarSelect(selectSubsetor, 'Selecione um setor primeiro...');
+            resetarSelect(selectUnidade, 'Selecione um subsetor primeiro...');
+
+            if (!setor) return;
+
+            try {
+                const resposta = await fetch(`buscar-subsetores?setor=${encodeURIComponent(setor)}`);
+                if (!resposta.ok) return;
+                const subsetores = await resposta.json();
+                preencherSelect(selectSubsetor, subsetores);
+            } catch (erro) {
+                console.error('Erro ao buscar subsetores:', erro);
+            }
+        }
+
+        // Busca as unidades pertencentes ao setor + subsetor informados
+        async function popularUnidades(setor, subsetor) {
+            resetarSelect(selectUnidade, 'Selecione um subsetor primeiro...');
+
+            if (!setor || !subsetor) return;
+
+            try {
+                const resposta = await fetch(`buscar-unidades?setor=${encodeURIComponent(setor)}&subsetor=${encodeURIComponent(subsetor)}`);
+                if (!resposta.ok) return;
+                const unidades = await resposta.json();
+                preencherSelect(selectUnidade, unidades);
+            } catch (erro) {
+                console.error('Erro ao buscar unidades:', erro);
+            }
+        }
+
+        selectSetor.addEventListener('change', function () {
+            popularSubsetores(this.value);
+        });
+
+        selectSubsetor.addEventListener('change', function () {
+            popularUnidades(selectSetor.value, this.value);
         });
     </script>
 
