@@ -279,14 +279,33 @@ $subsetores = $stmtSubsetores->fetchAll(PDO::FETCH_COLUMN);
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ??= bin2hex(random_bytes(32))) ?>">
 
                 <div class="filtros-lista">
-
-                    <!-- AQUISIÇÃO -->
+					
+					                    <!-- PERÍODO DE TOMBAMENTO -->
                     <div class="group-box">
-                        <span class="legend">📅 Aquisição</span>
+                        <span class="legend">📅 Período de Tombamento </span>
+
+                        <div class="radio-linha">
+                            <input type="radio" id="tombamento_periodo" name="tombamento_filtro" value="periodo" onchange="atualizarCampo(this)">
+                            <label for="tombamento_periodo">Período específico</label>
+                        </div>
+                        <div class="campo-selecao periodo-datas">
+                            <input type="date" name="data_tombamento_inicio" disabled>
+                            <input type="date" name="data_tombamento_fim" disabled>
+                        </div>
+
+                        <div class="radio-linha">
+                            <input type="radio" id="tombamento_todos" name="tombamento_filtro" value="todos" checked>
+                            <label for="tombamento_todos">Todos</label>
+                        </div>
+                    </div>
+					
+					                    <!-- PERÍODO DE AQUISIÇÃO -->
+                    <div class="group-box">
+                        <span class="legend">📅 Período de Aquisição</span>
 
                         <div class="radio-linha">
                             <input type="radio" id="aquisicao_periodo" name="aquisicao_filtro" value="periodo" onchange="atualizarCampo(this)">
-                            <label for="aquisicao_periodo">Período</label>
+                            <label for="aquisicao_periodo">Período específico</label>
                         </div>
                         <div class="campo-selecao periodo-datas">
                             <input type="date" name="data_inicio" disabled>
@@ -299,59 +318,9 @@ $subsetores = $stmtSubsetores->fetchAll(PDO::FETCH_COLUMN);
                         </div>
                     </div>
 
-                    <!-- GRUPO -->
-                    <div class="group-box">
-                        <span class="legend">🗂️ Escolha o Grupo</span>
-
-                        <div class="radio-linha">
-                            <input type="radio" id="grupo_descricao" name="grupo_filtro" value="descricao" onchange="atualizarCampo(this)">
-                            <label for="grupo_descricao">Descrição</label>
-                        </div>
-                        <div class="campo-selecao">
-                            <div class="select-wrapper">
-                                <select name="grupo_valor" disabled>
-                                    <option value="" disabled selected>Selecione...</option>
-                                    <?php foreach ($grupos as $grupo): ?>
-                                        <option value="<?= htmlspecialchars($grupo) ?>"><?= htmlspecialchars($grupo) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="radio-linha">
-                            <input type="radio" id="grupo_todos" name="grupo_filtro" value="todos" checked>
-                            <label for="grupo_todos">Todos</label>
-                        </div>
-                    </div>
-
-                    <!-- UNIDADE -->
-                    <div class="group-box">
-                        <span class="legend">🏢 Escolha a Unidade</span>
-
-                        <div class="radio-linha">
-                            <input type="radio" id="unidade_descricao" name="unidade_filtro" value="descricao" onchange="atualizarCampo(this)">
-                            <label for="unidade_descricao">Descrição</label>
-                        </div>
-                        <div class="campo-selecao">
-                            <div class="select-wrapper">
-                                <select name="unidade_valor" disabled>
-                                    <option value="" disabled selected>Selecione...</option>
-                                    <?php foreach ($unidades as $unidade): ?>
-                                        <option value="<?= htmlspecialchars($unidade) ?>"><?= htmlspecialchars($unidade) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="radio-linha">
-                            <input type="radio" id="unidade_todos" name="unidade_filtro" value="todos" checked>
-                            <label for="unidade_todos">Todos</label>
-                        </div>
-                    </div>
-
                     <!-- SETOR -->
                     <div class="group-box">
-                        <span class="legend">📍 Escolha o Setor</span>
+                        <span class="legend">📍 Setor</span>
 
                         <div class="radio-linha">
                             <input type="radio" id="setor_descricao" name="setor_filtro" value="descricao" onchange="atualizarCampo(this)">
@@ -376,7 +345,7 @@ $subsetores = $stmtSubsetores->fetchAll(PDO::FETCH_COLUMN);
 
                     <!-- SUBSETOR -->
                     <div class="group-box">
-                        <span class="legend">🧩 Escolha o SubSetor</span>
+                        <span class="legend">🧩 SubSetor</span>
 
                         <div class="radio-linha">
                             <input type="radio" id="subsetor_descricao" name="subsetor_filtro" value="descricao" onchange="atualizarCampo(this)">
@@ -396,6 +365,56 @@ $subsetores = $stmtSubsetores->fetchAll(PDO::FETCH_COLUMN);
                         <div class="radio-linha">
                             <input type="radio" id="subsetor_todos" name="subsetor_filtro" value="todos" checked>
                             <label for="subsetor_todos">Todos</label>
+                        </div>
+                    </div>
+					
+					                    <!-- UNIDADE -->
+                    <div class="group-box">
+                        <span class="legend">🏢 Unidade</span>
+
+                        <div class="radio-linha">
+                            <input type="radio" id="unidade_descricao" name="unidade_filtro" value="descricao" onchange="atualizarCampo(this)">
+                            <label for="unidade_descricao">Descrição</label>
+                        </div>
+                        <div class="campo-selecao">
+                            <div class="select-wrapper">
+                                <select name="unidade_valor" disabled>
+                                    <option value="" disabled selected>Selecione...</option>
+                                    <?php foreach ($unidades as $unidade): ?>
+                                        <option value="<?= htmlspecialchars($unidade) ?>"><?= htmlspecialchars($unidade) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="radio-linha">
+                            <input type="radio" id="unidade_todos" name="unidade_filtro" value="todos" checked>
+                            <label for="unidade_todos">Todos</label>
+                        </div>
+                    </div>
+					
+					                   <!-- GRUPO -->
+                    <div class="group-box">
+                        <span class="legend">🗂️ Grupo</span>
+
+                        <div class="radio-linha">
+                            <input type="radio" id="grupo_descricao" name="grupo_filtro" value="descricao" onchange="atualizarCampo(this)">
+                            <label for="grupo_descricao">Descrição</label>
+                        </div>
+                        <div class="campo-selecao">
+                            <div class="select-wrapper">
+                                <select name="grupo_valor" disabled>
+                                    <option value="" disabled selected>Selecione...</option>
+                                    <?php foreach ($grupos as $grupo): ?>
+                                        <option value="<?= htmlspecialchars($grupo) ?>"><?= htmlspecialchars($grupo) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="radio-linha">
+                            <input type="radio" id="grupo_todos" name="grupo_filtro" value="todos" checked>
+                            <label for="grupo_todos">Todos</label>
                         </div>
                     </div>
 

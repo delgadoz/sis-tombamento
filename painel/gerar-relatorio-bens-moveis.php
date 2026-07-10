@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'conexao.php'; // arquivo de conexão PDO
+require_once 'conexao.php';
 
 // Requer o autoload do Composer (necessário: composer require dompdf/dompdf)
 require_once 'vendor/autoload.php';
