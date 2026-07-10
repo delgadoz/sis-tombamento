@@ -36,26 +36,49 @@ unset($_SESSION['csrf_token']);
 $condicoes = [];
 $parametros = [];
 
-// --- Aquisição (período) ---
-if (($_POST['aquisicao_filtro'] ?? 'todos') === 'periodo') {
-    $dataInicio = trim($_POST['data_inicio'] ?? '');
-    $dataFim    = trim($_POST['data_fim'] ?? '');
+// --- Período de Tombamento ---
+if (($_POST['periodo_tombamento_filtro'] ?? 'todos') === 'periodo') {
+    $dataInicio_tombamento = trim($_POST['data_inicio_tombamento'] ?? '');
+    $dataFim_tombamento    = trim($_POST['data_fim_tombamento'] ?? '');
 
-    if (empty($dataInicio) || empty($dataFim)) {
+    if (empty($dataInicio_tombamento) || empty($dataFim_tombamento)) {
         $_SESSION['erro'] = 'Informe a data início e a data fim do período.';
         header('Location: relatorio-bens-moveis');
         exit;
     }
 
-    if ($dataInicio > $dataFim) {
+    if ($dataInicio_tombamento > $dataFim_tombamento) {
+        $_SESSION['erro'] = 'A data início não pode ser maior que a data fim.';
+        header('Location: relatorio-bens-moveis');
+        exit;
+    }
+
+	$condicoes[] = 'created_at >= :data_inicio_tombamento AND created_at < :data_fim_tombamento';
+
+	$parametros[':data_inicio_tombamento'] = $dataInicio_tombamento . ' 00:00:00';
+	$parametros[':data_fim_tombamento'] = date('Y-m-d', strtotime($dataFim_tombamento . ' +1 day')) . ' 00:00:00';
+}
+
+// --- Período de Aquisição ---
+if (($_POST['periodo_aquisicao_filtro'] ?? 'todos') === 'periodo') {
+    $dataInicio_aquisicao = trim($_POST['data_inicio'] ?? '');
+    $dataFim_aquisicao    = trim($_POST['data_fim'] ?? '');
+
+    if (empty($dataInicio_aquisicao) || empty($dataFim_aquisicao)) {
+        $_SESSION['erro'] = 'Informe a data início e a data fim do período.';
+        header('Location: relatorio-bens-moveis');
+        exit;
+    }
+
+    if ($dataInicio_aquisicao > $dataFim_aquisicao) {
         $_SESSION['erro'] = 'A data início não pode ser maior que a data fim.';
         header('Location: relatorio-bens-moveis');
         exit;
     }
 
     $condicoes[] = 'data_aquisicao BETWEEN :data_inicio AND :data_fim';
-    $parametros[':data_inicio'] = $dataInicio;
-    $parametros[':data_fim']    = $dataFim;
+    $parametros[':data_inicio'] = $dataInicio_aquisicao;
+    $parametros[':data_fim']    = $dataFim_aquisicao;
 }
 
 // --- Grupo ---
@@ -260,6 +283,9 @@ ob_start();
     <header>
         <h1>Prefeitura Municipal de Caraúbas - PB</h1>
         <h2>Relatório de Bens Móveis</h2>
+			<?php if (isset($dataInicio_tombamento)): ?>
+				<p>Período de tombamento: <?= date('d/m/Y', strtotime($dataInicio_tombamento)); ?> até <?= date('d/m/Y', strtotime($dataFim_tombamento)); ?></p>
+			<?php endif; ?>			
         <hr>
     </header>
 

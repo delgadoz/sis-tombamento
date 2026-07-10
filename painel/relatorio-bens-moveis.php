@@ -285,16 +285,16 @@ $subsetores = $stmtSubsetores->fetchAll(PDO::FETCH_COLUMN);
                         <span class="legend">📅 Período de Tombamento </span>
 
                         <div class="radio-linha">
-                            <input type="radio" id="tombamento_periodo" name="tombamento_filtro" value="periodo" onchange="atualizarCampo(this)">
+                            <input type="radio" id="tombamento_periodo" name="periodo_tombamento_filtro" value="periodo" onchange="atualizarCampo(this)">
                             <label for="tombamento_periodo">Período específico</label>
                         </div>
                         <div class="campo-selecao periodo-datas">
-                            <input type="date" name="data_tombamento_inicio" disabled>
-                            <input type="date" name="data_tombamento_fim" disabled>
+                            <input type="date" name="data_inicio_tombamento" disabled>
+                            <input type="date" name="data_fim_tombamento" disabled>
                         </div>
 
                         <div class="radio-linha">
-                            <input type="radio" id="tombamento_todos" name="tombamento_filtro" value="todos" checked>
+                            <input type="radio" id="tombamento_todos" name="periodo_tombamento_filtro" value="todos" checked>
                             <label for="tombamento_todos">Todos</label>
                         </div>
                     </div>
@@ -304,7 +304,7 @@ $subsetores = $stmtSubsetores->fetchAll(PDO::FETCH_COLUMN);
                         <span class="legend">📅 Período de Aquisição</span>
 
                         <div class="radio-linha">
-                            <input type="radio" id="aquisicao_periodo" name="aquisicao_filtro" value="periodo" onchange="atualizarCampo(this)">
+                            <input type="radio" id="aquisicao_periodo" name="periodo_aquisicao_filtro" value="periodo" onchange="atualizarCampo(this)">
                             <label for="aquisicao_periodo">Período específico</label>
                         </div>
                         <div class="campo-selecao periodo-datas">
@@ -313,7 +313,7 @@ $subsetores = $stmtSubsetores->fetchAll(PDO::FETCH_COLUMN);
                         </div>
 
                         <div class="radio-linha">
-                            <input type="radio" id="aquisicao_todos" name="aquisicao_filtro" value="todos" checked>
+                            <input type="radio" id="aquisicao_todos" name="periodo_aquisicao_filtro" value="todos" checked>
                             <label for="aquisicao_todos">Todos</label>
                         </div>
                     </div>
