@@ -41,7 +41,7 @@ try {
             setor,
             subsetor,
             unidade,
-            grupo,
+            grupo_id,
             estado,
             tipo,
             valor

@@ -38,7 +38,7 @@ $numero_nota     = trim($_POST['numero_nota']      ?? '');
 $setor           = trim($_POST['setor']            ?? '');
 $subsetor        = trim($_POST['subsetor']         ?? '');
 $unidade         = trim($_POST['unidade']          ?? '');
-$grupo           = trim($_POST['grupo']            ?? '');
+$grupo_id        = trim($_POST['grupo_id']         ?? '');
 $estado          = trim($_POST['estado']           ?? '');
 $tipo            = trim($_POST['tipo']             ?? '');
 $valor_raw       = trim($_POST['valor']            ?? '');
@@ -116,14 +116,24 @@ if (empty($subsetor)) {
     exit;
 }
 
-// Grupos permitidos
-$grupos_validos = [
-    'Móveis', 'Eletrodoméstico', 'Eletrônicos', 'Instrumento Musical',
-    'Equipamentos Hospitalares', 'Máquinas e Equipamentos', 'Veículos',
-    'Ferramentas', 'Outros'
-];
-if (empty($grupo) || !in_array($grupo, $grupos_validos, true)) {
+// Grupo: valida formato e existência no banco
+if ($grupo_id === '' || !ctype_digit($grupo_id)) {
     $_SESSION['erro'] = 'Grupo inválido.';
+    header('Location: alterar-bem-movel');
+    exit;
+}
+
+try {
+    $stmtG = $pdo->prepare("SELECT id FROM grupos WHERE id = :id LIMIT 1");
+    $stmtG->bindParam(':id', $grupo_id, PDO::PARAM_INT);
+    $stmtG->execute();
+    if (!$stmtG->fetch()) {
+        $_SESSION['erro'] = 'O grupo selecionado é inválido.';
+        header('Location: alterar-bem-movel');
+        exit;
+    }
+} catch (PDOException $e) {
+    $_SESSION['erro'] = 'Erro interno ao verificar o grupo. Tente novamente.';
     header('Location: alterar-bem-movel');
     exit;
 }
@@ -187,7 +197,7 @@ try {
                 setor           = :setor,
                 subsetor        = :subsetor,
                 unidade         = :unidade,
-                grupo           = :grupo,
+                grupo_id        = :grupo_id,
                 estado          = :estado,
                 tipo            = :tipo,
                 valor           = :valor,
@@ -205,7 +215,7 @@ try {
     $stmt->bindParam(':setor',          $setor,          PDO::PARAM_STR);
     $stmt->bindParam(':subsetor',       $subsetor,       PDO::PARAM_STR);
     $stmt->bindParam(':unidade',        $unidade,        PDO::PARAM_STR);
-    $stmt->bindParam(':grupo',          $grupo,          PDO::PARAM_STR);
+    $stmt->bindParam(':grupo_id',       $grupo_id,       PDO::PARAM_INT);
     $stmt->bindParam(':estado',         $estado,         PDO::PARAM_STR);
     $stmt->bindParam(':tipo',           $tipo,           PDO::PARAM_STR);
     $stmt->bindParam(':valor',          $valor,          PDO::PARAM_STR);

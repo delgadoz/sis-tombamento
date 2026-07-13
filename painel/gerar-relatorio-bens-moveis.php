@@ -53,7 +53,7 @@ if (($_POST['periodo_tombamento_filtro'] ?? 'todos') === 'periodo') {
         exit;
     }
 
-	$condicoes[] = 'created_at >= :data_inicio_tombamento AND created_at < :data_fim_tombamento';
+	$condicoes[] = 'b.created_at >= :data_inicio_tombamento AND b.created_at < :data_fim_tombamento';
 
 	$parametros[':data_inicio_tombamento'] = $dataInicio_tombamento . ' 00:00:00';
 	$parametros[':data_fim_tombamento'] = date('Y-m-d', strtotime($dataFim_tombamento . ' +1 day')) . ' 00:00:00';
@@ -76,7 +76,7 @@ if (($_POST['periodo_aquisicao_filtro'] ?? 'todos') === 'periodo') {
         exit;
     }
 
-    $condicoes[] = 'data_aquisicao BETWEEN :data_inicio AND :data_fim';
+    $condicoes[] = 'b.data_aquisicao BETWEEN :data_inicio AND :data_fim';
     $parametros[':data_inicio'] = $dataInicio_aquisicao;
     $parametros[':data_fim']    = $dataFim_aquisicao;
 }
@@ -84,9 +84,9 @@ if (($_POST['periodo_aquisicao_filtro'] ?? 'todos') === 'periodo') {
 // --- Grupo ---
 if (($_POST['grupo_filtro'] ?? 'todos') === 'descricao') {
     $grupoValor = trim($_POST['grupo_valor'] ?? '');
-    if ($grupoValor !== '') {
-        $condicoes[] = 'grupo = :grupo';
-        $parametros[':grupo'] = $grupoValor;
+    if ($grupoValor !== '' && ctype_digit($grupoValor)) {
+        $condicoes[] = 'b.grupo_id = :grupo_id';
+        $parametros[':grupo_id'] = (int) $grupoValor;
     }
 }
 
@@ -94,7 +94,7 @@ if (($_POST['grupo_filtro'] ?? 'todos') === 'descricao') {
 if (($_POST['unidade_filtro'] ?? 'todos') === 'descricao') {
     $unidadeValor = trim($_POST['unidade_valor'] ?? '');
     if ($unidadeValor !== '') {
-        $condicoes[] = 'unidade = :unidade';
+        $condicoes[] = 'b.unidade = :unidade';
         $parametros[':unidade'] = $unidadeValor;
     }
 }
@@ -103,7 +103,7 @@ if (($_POST['unidade_filtro'] ?? 'todos') === 'descricao') {
 if (($_POST['setor_filtro'] ?? 'todos') === 'descricao') {
     $setorValor = trim($_POST['setor_valor'] ?? '');
     if ($setorValor !== '') {
-        $condicoes[] = 'setor = :setor';
+        $condicoes[] = 'b.setor = :setor';
         $parametros[':setor'] = $setorValor;
     }
 }
@@ -112,7 +112,7 @@ if (($_POST['setor_filtro'] ?? 'todos') === 'descricao') {
 if (($_POST['subsetor_filtro'] ?? 'todos') === 'descricao') {
     $subsetorValor = trim($_POST['subsetor_valor'] ?? '');
     if ($subsetorValor !== '') {
-        $condicoes[] = 'subsetor = :subsetor';
+        $condicoes[] = 'b.subsetor = :subsetor';
         $parametros[':subsetor'] = $subsetorValor;
     }
 }
@@ -120,17 +120,19 @@ if (($_POST['subsetor_filtro'] ?? 'todos') === 'descricao') {
 // ===== ORDENAÇÃO (whitelist para evitar SQL injection) =====
 
 $colunasOrdenacao = [
-    'codigo'     => 'id',
-    'tombamento' => 'numero_tombamento',
-    'descricao'  => 'descricao',
+    'codigo'     => 'b.id',
+    'tombamento' => 'b.numero_tombamento',
+    'descricao'  => 'b.descricao',
 ];
 
 $ordenarPorEscolhido = $_POST['ordenar_por'] ?? 'tombamento';
 $colunaOrdenacao = $colunasOrdenacao[$ordenarPorEscolhido] ?? 'numero_tombamento';
 
 // ===== MONTAGEM E EXECUÇÃO DA QUERY =====
-$sql = "SELECT id, numero_tombamento, descricao, marca, setor, subsetor, unidade, grupo, estado, tipo, valor, data_aquisicao
-        FROM bens_moveis";
+$sql = "SELECT b.id, b.numero_tombamento, b.descricao, b.marca, b.setor, b.subsetor, b.unidade,
+               g.nome AS grupo, b.estado, b.tipo, b.valor, b.data_aquisicao
+        FROM bens_moveis b
+        INNER JOIN grupos g ON g.id = b.grupo_id";
 
 if (!empty($condicoes)) {
     $sql .= ' WHERE ' . implode(' AND ', $condicoes);

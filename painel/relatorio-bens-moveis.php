@@ -12,9 +12,9 @@ $nome_completo = $_SESSION['nome'];
 
 // ===== BUSCA OS DADOS PARA OS DROPDOWNS =====
 
-// Grupo: não existe tabela própria, então usamos DISTINCT direto de bens_moveis
-$stmtGrupos = $pdo->query("SELECT DISTINCT grupo FROM bens_moveis WHERE grupo <> '' ORDER BY grupo ASC");
-$grupos = $stmtGrupos->fetchAll(PDO::FETCH_COLUMN);
+// Grupo: agora possui tabela própria
+$stmtGrupos = $pdo->query("SELECT id, nome FROM grupos ORDER BY nome ASC");
+$grupos = $stmtGrupos->fetchAll(PDO::FETCH_ASSOC);
 
 // Setor: tabela própria
 $stmtSetores = $pdo->query("SELECT descricao FROM setores ORDER BY descricao ASC");
@@ -395,8 +395,8 @@ $setores = $stmtSetores->fetchAll(PDO::FETCH_COLUMN);
                             <div class="select-wrapper">
                                 <select name="grupo_valor" disabled>
                                     <option value="" disabled selected>Selecione...</option>
-                                    <?php foreach ($grupos as $grupo): ?>
-                                        <option value="<?= htmlspecialchars($grupo) ?>"><?= htmlspecialchars($grupo) ?></option>
+                                    <?php foreach ($grupos as $g): ?>
+                                        <option value="<?= (int) $g['id'] ?>"><?= htmlspecialchars($g['nome']) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>

@@ -18,6 +18,14 @@ try {
     $setores = [];
 }
 
+// Busca os grupos cadastrados
+try {
+    $stmtG  = $pdo->query("SELECT id, nome FROM grupos ORDER BY nome ASC");
+    $grupos = $stmtG->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $grupos = [];
+}
+
 // Busca o último número de tombamento cadastrado pelo usuário logado
 $proximoTombamento = 1;
 
@@ -689,17 +697,13 @@ try {
                         <div class="form-group">
                             <label for="grupo">Grupo</label>
                             <div class="select-wrapper">
-                                <select id="grupo" name="grupo" required>
+                                <select id="grupo" name="grupo_id" required>
                                     <option value="" disabled selected>Selecione o grupo</option>
-                                    <option value="Móveis">Móveis</option>
-                                    <option value="Eletrodoméstico">Eletrodoméstico</option>
-                                    <option value="Eletrônicos">Eletrônicos</option>
-                                    <option value="Instrumento Musical">Instrumento Musical</option>
-                                    <option value="Equipamentos Hospitalares">Equipamentos Hospitalares</option>
-                                    <option value="Máquinas e Equipamentos">Máquinas e Equipamentos</option>
-                                    <option value="Veículos">Veículos</option>
-                                    <option value="Ferramentas">Ferramentas</option>
-                                    <option value="Outros">Outros</option>
+                                    <?php foreach ($grupos as $g): ?>
+                                        <option value="<?= (int) $g['id'] ?>">
+                                            <?= htmlspecialchars($g['nome']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
