@@ -1,33 +1,25 @@
 <?php
 session_start();
 require_once 'conexao.php';
-
 // Bloqueia qualquer método que não seja GET
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     http_response_code(405);
     exit;
 }
-
 // Exige sessão ativa
 if (!isset($_SESSION['usuario'])) {
     http_response_code(401);
     exit;
 }
-
 $usuario = $_SESSION['usuario'];
-
 header('Content-Type: application/json; charset=utf-8');
-
 $numero_tombamento = trim($_GET['numero_tombamento'] ?? '');
-
 // Valida se o parâmetro foi enviado e é numérico
 if ($numero_tombamento === '' || !ctype_digit($numero_tombamento)) {
     echo json_encode(null);
     exit;
 }
-
 $cnpj_logado = $_SESSION['cnpj'];
-
 try {
     $stmt = $pdo->prepare(
         "SELECT
@@ -44,7 +36,8 @@ try {
             grupo_id,
             estado,
             tipo,
-            valor
+            valor,
+            (created_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)) AS dentro_prazo
          FROM bens_moveis
          WHERE numero_tombamento = :numero_tombamento
            AND cnpj = :cnpj AND created_by = :usuario
@@ -54,16 +47,16 @@ try {
     $stmt->bindParam(':cnpj',              $cnpj_logado,       PDO::PARAM_STR);
 	$stmt->bindParam(':usuario',              $usuario,       PDO::PARAM_STR);
     $stmt->execute();
-
     $bem = $stmt->fetch(PDO::FETCH_ASSOC);
-
     if (!$bem) {
         echo json_encode(null);
         exit;
     }
 
-    echo json_encode($bem);
+    // CAST para tornar a flag em bool
+    $bem['dentro_prazo'] = (bool) $bem['dentro_prazo'];
 
+    echo json_encode($bem);
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode(null);

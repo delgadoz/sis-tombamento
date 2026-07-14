@@ -472,6 +472,23 @@ try {
             color: #5dd879;
         }
 
+        /* ===== AVISO DE EDIÇÃO PARCIAL (fora do prazo de 3 dias) ===== */
+        .aviso-prazo {
+            display: none;
+            background: rgba(255, 152, 0, 0.15);
+            border: 1px solid rgba(255, 152, 0, 0.5);
+            color: #ffb74d;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.88rem;
+            line-height: 1.4;
+        }
+
+        .aviso-prazo.visivel {
+            display: block;
+        }
+
         /* ===== RESPONSIVIDADE ===== */
         @media (max-width: 600px) {
             main    { padding: 16px; }
@@ -547,6 +564,10 @@ try {
 
                 <!-- ===== DADOS DO BEM ===== -->
                 <div class="campos-bem" id="camposBem">
+
+                    <div class="aviso-prazo" id="avisoPrazo">
+                        ⏳ Este bem foi cadastrado há mais de 3 dias. Apenas <strong>Setor</strong>, <strong>Subsetor</strong>, <strong>Unidade</strong> e <strong>Estado</strong> podem ser alterados.
+                    </div>
 
                     <div class="group-box">
                         <span class="legend">📋 Dados do Bem</span>
@@ -747,6 +768,25 @@ try {
         const selectUnidade    = document.getElementById('unidade');
         const wrapperSubsetor  = document.getElementById('wrapper-subsetor');
         const wrapperUnidade   = document.getElementById('wrapper-unidade');
+        const avisoPrazo       = document.getElementById('avisoPrazo');
+
+        // Campos que só podem ser alterados dentro dos 3 dias após o cadastro.
+        // Setor, Subsetor, Unidade e Estado ficam de fora dessa lista pois
+        // continuam editáveis independentemente do prazo.
+        const CAMPOS_PRAZO_LIMITADO = [
+            'descricao', 'marca', 'numero_empenho', 'data_aquisicao',
+            'numero_nota', 'grupo', 'tipo', 'valor_display'
+        ];
+
+        // ===== HABILITA/BLOQUEIA CAMPOS CONFORME O PRAZO DE EDIÇÃO =====
+        function aplicarModoEdicao(dentroPrazo) {
+            CAMPOS_PRAZO_LIMITADO.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.disabled = !dentroPrazo;
+            });
+
+            avisoPrazo.classList.toggle('visivel', !dentroPrazo);
+        }
 
         // ===== MODAL DE EXCLUSÃO =====
         const modalOverlay      = document.getElementById('modalExclusao');
@@ -808,6 +848,7 @@ try {
                         btnSubmit.disabled = true;
                         btnExcluir.disabled = true;
                         idBemInput.value = '';
+                        aplicarModoEdicao(true); // reseta os campos para o estado padrão (habilitados)
                         return;
                     }
 
@@ -831,6 +872,11 @@ try {
         // ===== PREENCHE OS CAMPOS DO FORMULÁRIO =====
         function preencherFormulario(bem) {
             idBemInput.value = bem.id;
+
+            // `dentro_prazo` deve vir do buscar-bem-movel.php (true/false).
+            // Se o campo não vier (ex.: endpoint ainda não atualizado), assume-se
+            // o modo mais seguro (restrito) para não permitir edição indevida.
+            aplicarModoEdicao(bem.dentro_prazo === true || bem.dentro_prazo === 1 || bem.dentro_prazo === '1');
 
             setVal('descricao',      bem.descricao      ?? '');
             setVal('marca',          bem.marca          ?? '');
