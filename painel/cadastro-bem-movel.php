@@ -331,10 +331,10 @@ $imagensJson = json_encode($urlsImagens);
 try {
     $sql = "INSERT INTO bens_moveis 
                 (numero_tombamento, descricao, marca, numero_empenho, data_aquisicao,
-                 numero_nota, setor, subsetor, unidade, grupo_id, estado, tipo, valor, imagens, created_by, cnpj)
+                 numero_nota, setor, subsetor, unidade, grupo_id, estado, tipo, valor, imagens, created_by, cnpj, setor_original)
             VALUES 
                 (:numero_tombamento, :descricao, :marca, :numero_empenho, :data_aquisicao,
-                 :numero_nota, :setor, :subsetor, :unidade, :grupo_id, :estado, :tipo, :valor, :imagens, :created_by, :cnpj)";
+                 :numero_nota, :setor, :subsetor, :unidade, :grupo_id, :estado, :tipo, :valor, :imagens, :created_by, :cnpj,   :setor_original)";
 
     $stmt = $pdo->prepare($sql);
 
@@ -370,6 +370,7 @@ try {
         $stmt->bindParam(':imagens',           $imagensJson,    PDO::PARAM_STR);
         $stmt->bindParam(':created_by',        $created_by,     PDO::PARAM_STR);
         $stmt->bindParam(':cnpj',              $cnpj,           PDO::PARAM_STR);
+		$stmt->bindParam(':setor_original',    $setor,          PDO::PARAM_STR);
         $stmt->execute();
     }
 
