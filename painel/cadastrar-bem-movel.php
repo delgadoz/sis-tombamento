@@ -482,6 +482,47 @@ try {
             margin-top: 2px;
         }
 
+        /* ===== REAPROVEITAR DADOS (RECICLAGEM) ===== */
+        .reciclar-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            align-items: flex-start;
+            flex: 0 0 auto;
+        }
+
+        .btn-reciclar {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 152, 0, 0.15);
+            border: 1px solid rgba(255, 152, 0, 0.35);
+            border-radius: 8px;
+            color: #ff9800;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            padding: 0;
+        }
+
+        .btn-reciclar:hover  { background: rgba(255, 152, 0, 0.3); }
+        .btn-reciclar:active { transform: scale(0.95); }
+
+        .btn-reciclar:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-reciclar .icone-reciclar {
+            width: 20px;
+            height: 20px;
+        }
+
+        .btn-reciclar.carregando .icone-reciclar {
+            animation: spin 0.8s linear infinite;
+        }
+
         .btn-submit {
             padding: 13px 40px;
             background: #ff9800;
@@ -591,6 +632,20 @@ try {
                                         min="0" step="1" required autocomplete="off"
                                         value="<?= $proximoTombamento ?>">
                                     <button type="button" class="tomb-btn" id="tombMais">+</button>
+                                </div>
+                            </div>
+
+                            <div class="reciclar-wrapper">
+                                <span class="toggle-massa-label-text">&nbsp;</span>
+                                <div class="toggle-switch-row">
+                                    <button type="button" class="btn-reciclar" id="btnReciclar"
+                                        title="Reaproveitar Nº do Empenho, Data de Aquisição, Nº da Nota, Setor, Subsetor e Tipo de um bem já cadastrado com este Nº de Tombamento">
+                                        <svg class="icone-reciclar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="23 4 23 10 17 10"></polyline>
+                                            <polyline points="1 20 1 14 7 14"></polyline>
+                                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
 
@@ -800,9 +855,9 @@ try {
         const wrapperSubsetor = document.getElementById('wrapper-subsetor');
         const wrapperUnidade  = document.getElementById('wrapper-unidade');
 
-        selectSetor.addEventListener('change', function () {
-            const setor = this.value;
-
+        // Carrega os subsetores de um setor. Se subsetorAlvo for informado e existir
+        // na lista retornada, seleciona-o automaticamente (usado pelo botão de reaproveitar dados).
+        function carregarSubsetores(setor, subsetorAlvo = null) {
             selectUnidade.innerHTML = '<option value="" selected>Selecione primeiro o subsetor</option>';
             selectUnidade.disabled  = true;
 
@@ -810,26 +865,87 @@ try {
             selectSubsetor.disabled  = true;
             wrapperSubsetor.classList.add('loading');
 
-            fetch('buscar-subsetores.php?setor=' + encodeURIComponent(setor))
+            return fetch('buscar-subsetores.php?setor=' + encodeURIComponent(setor))
                 .then(r => { if (!r.ok) throw new Error(); return r.json(); })
                 .then(data => {
                     wrapperSubsetor.classList.remove('loading');
                     if (data.length === 0) {
                         selectSubsetor.innerHTML = '<option value="" disabled selected>Nenhum subsetor encontrado</option>';
-                    } else {
-                        selectSubsetor.innerHTML = '<option value="" disabled selected>Selecione o subsetor</option>';
-                        data.forEach(item => {
-                            const opt = document.createElement('option');
-                            opt.value = item.descricao;
-                            opt.textContent = item.descricao;
-                            selectSubsetor.appendChild(opt);
-                        });
-                        selectSubsetor.disabled = false;
+                        return;
+                    }
+
+                    selectSubsetor.innerHTML = '<option value="" disabled selected>Selecione o subsetor</option>';
+                    data.forEach(item => {
+                        const opt = document.createElement('option');
+                        opt.value = item.descricao;
+                        opt.textContent = item.descricao;
+                        selectSubsetor.appendChild(opt);
+                    });
+                    selectSubsetor.disabled = false;
+
+                    if (subsetorAlvo) {
+                        const existe = Array.from(selectSubsetor.options).some(o => o.value === subsetorAlvo);
+                        if (existe) {
+                            selectSubsetor.value = subsetorAlvo;
+                            selectSubsetor.dispatchEvent(new Event('change'));
+                        }
                     }
                 })
                 .catch(() => {
                     wrapperSubsetor.classList.remove('loading');
                     selectSubsetor.innerHTML = '<option value="" disabled selected>Erro ao carregar</option>';
+                });
+        }
+
+        selectSetor.addEventListener('change', function () {
+            carregarSubsetores(this.value);
+        });
+
+        // ===== REAPROVEITAR DADOS (RECICLAGEM) =====
+        // Busca um bem já cadastrado pelo Nº de Tombamento informado e preenche
+        // Nº do Empenho, Data de Aquisição, Nº da Nota, Setor, Subsetor e Tipo,
+        // facilitando o cadastro de itens da mesma nota fiscal.
+        const btnReciclar = document.getElementById('btnReciclar');
+
+        btnReciclar.addEventListener('click', function () {
+            const numTomb = inputTomb.value.trim();
+
+            if (!numTomb) {
+                alert('Informe o Nº de Tombamento para buscar os dados.');
+                inputTomb.focus();
+                return;
+            }
+
+            btnReciclar.disabled = true;
+            btnReciclar.classList.add('carregando');
+
+            fetch('buscar-bem-por-tombamento.php?numero_tombamento=' + encodeURIComponent(numTomb))
+                .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+                .then(data => {
+                    if (!data.encontrado) {
+                        alert('Nenhum bem cadastrado foi encontrado com esse Nº de Tombamento.');
+                        return;
+                    }
+
+                    document.getElementById('numero_empenho').value = data.numero_empenho || '';
+                    document.getElementById('numero_nota').value    = data.numero_nota    || '';
+                    document.getElementById('data_aquisicao').value = data.data_aquisicao || '';
+
+                    if (data.tipo) {
+                        document.getElementById('tipo').value = data.tipo;
+                    }
+
+                    if (data.setor) {
+                        selectSetor.value = data.setor;
+                        carregarSubsetores(data.setor, data.subsetor || null);
+                    }
+                })
+                .catch(() => {
+                    alert('Erro ao buscar os dados. Tente novamente.');
+                })
+                .finally(() => {
+                    btnReciclar.disabled = false;
+                    btnReciclar.classList.remove('carregando');
                 });
         });
 

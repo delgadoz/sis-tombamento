@@ -6,23 +6,20 @@ if (!isset($_SESSION['usuario'])) {
     exit();
 }
 
-require_once 'conexao.php'; // arquivo de conexão PDO
+require_once 'conexao.php'; 
 
 $nome_completo = $_SESSION['nome'];
 
 // ===== BUSCA OS DADOS PARA OS DROPDOWNS =====
 
-// Grupo: agora possui tabela própria
+// Grupo
 $stmtGrupos = $pdo->query("SELECT id, nome FROM grupos ORDER BY nome ASC");
 $grupos = $stmtGrupos->fetchAll(PDO::FETCH_ASSOC);
 
-// Setor: tabela própria
+// Setor
 $stmtSetores = $pdo->query("SELECT descricao FROM setores ORDER BY descricao ASC");
 $setores = $stmtSetores->fetchAll(PDO::FETCH_COLUMN);
 
-// SubSetor e Unidade agora são carregados dinamicamente via AJAX
-// (buscar-subsetores.php e buscar-unidades.php), de acordo com o
-// Setor/SubSetor selecionado, então não são mais pré-carregados aqui.
 ?>
 
 <!DOCTYPE html>
