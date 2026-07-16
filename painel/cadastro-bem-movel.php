@@ -121,8 +121,8 @@ if (!in_array($tipo, $tipos_permitidos, true)) {
 // ===== VALIDAÇÃO DO TOMBAMENTO EM MASSA =====
 if ($tombamento_massa) {
     // Rejeita qualquer valor fora do intervalo permitido
-    if ($quantidade_massa < 3 || $quantidade_massa > 25) {
-        $_SESSION['erro'] = 'A quantidade para tombamento em massa deve ser entre 3 e 25.';
+    if ($quantidade_massa < 2 || $quantidade_massa > 25) {
+        $_SESSION['erro'] = 'A quantidade para tombamento em massa deve ser entre 2 e 25.';
         header('Location: cadastrar-bem-movel');
         exit;
     }
@@ -340,10 +340,6 @@ try {
 
     // Determina quantos registros serão inseridos
     $total_insercoes = $tombamento_massa ? $quantidade_massa : 1;
-	
-	if($total_insercoes >= 3){
-		$valor = $valor / $total_insercoes;
-	}
 	
 	$valor = number_format((float)$valor, 2, '.', '');
 	

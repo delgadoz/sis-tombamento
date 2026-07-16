@@ -639,7 +639,7 @@ try {
                                 <span class="toggle-massa-label-text">&nbsp;</span>
                                 <div class="toggle-switch-row">
                                     <button type="button" class="btn-reciclar" id="btnReciclar"
-                                        title="Reaproveitar Nº do Empenho, Data de Aquisição, Nº da Nota, Setor, Subsetor e Tipo de um bem já cadastrado com este Nº de Tombamento">
+                                        title="Reaproveitar informações do bem">
                                         <svg class="icone-reciclar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <polyline points="23 4 23 10 17 10"></polyline>
                                             <polyline points="1 20 1 14 7 14"></polyline>
@@ -664,10 +664,10 @@ try {
                                 <div class="tombamento-wrapper">
                                     <button type="button" class="tomb-btn" id="massaMenos">−</button>
                                     <input type="number" id="quantidade_massa" name="quantidade_massa"
-                                        min="3" max="25" step="1" value="3" autocomplete="off">
+                                        min="2" max="25" step="1" value="2" autocomplete="off">
                                     <button type="button" class="tomb-btn" id="massaMais">+</button>
                                 </div>
-                                <span class="massa-hint">Mín. 3 · Máx. 25 tombamentos</span>
+                                <span class="massa-hint">Mín. 2 · Máx. 25 tombamentos</span>
                             </div>
 
                         </div>
@@ -997,7 +997,7 @@ try {
         const toggleMassa         = document.getElementById('toggleMassa');
         const massaQuantidadeGroup = document.getElementById('massaQuantidadeGroup');
         const inputQuantidadeMassa = document.getElementById('quantidade_massa');
-        const MASSA_MIN = 3;
+        const MASSA_MIN = 2;
         const MASSA_MAX = 25;
 
         toggleMassa.addEventListener('change', function () {
