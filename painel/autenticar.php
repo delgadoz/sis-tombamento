@@ -1,6 +1,7 @@
 <?php
 session_start();
-require_once 'conexao.php'; 
+require_once 'conexao.php';
+require_once 'rate_limit.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: login');
@@ -9,9 +10,27 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $email = trim($_POST['email'] ?? '');
 $senha = $_POST['senha'] ?? '';
+$ip    = obterIpCliente();
 
 if (empty($email) || empty($senha)) {
     $_SESSION['erro'] = 'Preencha todos os campos.';
+    header('Location: login');
+    exit;
+}
+
+// Limpeza periódica de registros antigos (baixa probabilidade por requisição)
+limparRegistrosAntigos($pdo);
+
+// Bloqueio por IP 
+if (estaBloqueado($pdo, $ip, 'ip')) {
+    $_SESSION['erro'] = 'Muitas tentativas. Tente novamente em alguns minutos.';
+    header('Location: login');
+    exit;
+}
+
+// Bloqueio por e-mail
+if (estaBloqueado($pdo, $email, 'email')) {
+    $_SESSION['erro'] = 'Muitas tentativas para este e-mail. Tente novamente mais tarde.';
     header('Location: login');
     exit;
 }
@@ -29,12 +48,17 @@ try {
     $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$usuario || !password_verify($senha, $usuario['senha'])) {
+        registrarTentativaFalha($pdo, $ip, 'ip');
+        registrarTentativaFalha($pdo, $email, 'email');
         $_SESSION['erro'] = 'E-mail ou senha inválidos.';
         header('Location: login');
         exit;
     }
 
-    // Login OK
+    // Login OK - limpa o histórico de tentativas falhas
+    limparTentativas($pdo, $ip, 'ip');
+    limparTentativas($pdo, $email, 'email');
+
     $_SESSION['usuario'] = $usuario['usuario'];
     $_SESSION['nome']    = $usuario['nome'];
     $_SESSION['email']   = $usuario['email'];
