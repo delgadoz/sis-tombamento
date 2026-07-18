@@ -1,20 +1,17 @@
 <?php
 session_start();
-require_once 'conexao.php'; // arquivo de conexão PDO
+require_once 'conexao.php'; 
 
-// Bloqueia qualquer método que não seja POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: alterar-bem-movel');
     exit;
 }
 
-// Redireciona para login se não houver sessão ativa
 if (!isset($_SESSION['usuario'])) {
     header('Location: login');
     exit;
 }
 
-// ===== PROTEÇÃO CSRF =====
 $token_recebido = $_POST['csrf_token']    ?? '';
 $token_sessao   = $_SESSION['csrf_token'] ?? '';
 
@@ -24,7 +21,6 @@ if (empty($token_recebido) || !hash_equals($token_sessao, $token_recebido)) {
     exit;
 }
 
-// Invalida o token após uso (token de uso único)
 unset($_SESSION['csrf_token']);
 
 // ===== COLETA E SANITIZAÇÃO DOS CAMPOS =====
@@ -200,7 +196,6 @@ if ($edicao_completa) {
 // ===== ATUALIZAÇÃO NO BANCO (PDO + Prepared Statement) =====
 try {
     if ($edicao_completa) {
-        // Dentro do prazo de 3 dias: edição completa do registro
         $sql = "UPDATE bens_moveis SET
                     descricao       = :descricao,
                     marca           = :marca,
@@ -236,7 +231,6 @@ try {
         $stmt->bindParam(':id',             $id_bem,         PDO::PARAM_INT);
         $stmt->bindParam(':cnpj',           $cnpj_logado,    PDO::PARAM_STR);
     } else {
-        // Fora do prazo de 3 dias: edição restrita a setor, subsetor, unidade e estado
         $sql = "UPDATE bens_moveis SET
                     setor           = :setor,
                     subsetor        = :subsetor,

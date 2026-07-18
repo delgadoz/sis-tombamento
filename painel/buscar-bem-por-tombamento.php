@@ -22,7 +22,7 @@ if ($numero_tombamento === '' || !ctype_digit($numero_tombamento)) {
     exit;
 }
 
-// ===== BUSCA NO BANCO (isolada por cnpj, como o restante do sistema) =====
+// ===== BUSCA NO BANCO =====
 try {
     $stmt = $pdo->prepare(
         "SELECT numero_empenho, data_aquisicao, numero_nota, setor, subsetor, tipo

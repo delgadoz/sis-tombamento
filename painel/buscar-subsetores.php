@@ -2,14 +2,12 @@
 session_start();
 require_once 'conexao.php';
 
-// Bloqueia acesso sem sessão ativa
 if (!isset($_SESSION['usuario'])) {
     http_response_code(401);
     echo json_encode([]);
     exit;
 }
 
-// Bloqueia métodos que não sejam GET
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     http_response_code(405);
     echo json_encode([]);

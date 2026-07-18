@@ -2,19 +2,16 @@
 session_start();
 require_once 'conexao.php';
 
-// Bloqueia qualquer método que não seja POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: configuracoes');
     exit;
 }
 
-// Redireciona para login se não houver sessão ativa
 if (!isset($_SESSION['usuario'])) {
     header('Location: login');
     exit;
 }
 
-// ===== PROTEÇÃO CSRF =====
 $token_recebido = $_POST['csrf_token']    ?? '';
 $token_sessao   = $_SESSION['csrf_token'] ?? '';
 
@@ -37,13 +34,11 @@ if (!in_array($acao, $acoes_permitidas, true)) {
 }
 
 $usuario = $_SESSION['usuario'];
-$cnpj    = $_SESSION['cnpj'];
 
 // ===== BUSCA OS DADOS ATUAIS DO USUÁRIO NO BANCO =====
 try {
-    $stmtU = $pdo->prepare("SELECT id, senha FROM usuarios WHERE usuario = :u AND cnpj = :c LIMIT 1");
+    $stmtU = $pdo->prepare("SELECT id, senha FROM usuarios WHERE usuario = :u LIMIT 1");
     $stmtU->bindParam(':u', $usuario, PDO::PARAM_STR);
-    $stmtU->bindParam(':c', $cnpj,    PDO::PARAM_STR);
     $stmtU->execute();
     $dadosUsuario = $stmtU->fetch(PDO::FETCH_ASSOC);
 
@@ -73,9 +68,7 @@ if (!password_verify($senha_atual, $dadosUsuario['senha'])) {
     exit;
 }
 
-// =====================================================================
 // ===== AÇÃO: ALTERAR SENHA =====
-// =====================================================================
 
 if ($acao === 'alterar_senha') {
 
@@ -94,7 +87,6 @@ if ($acao === 'alterar_senha') {
         exit;
     }
 
-    // ===== POLÍTICA MÍNIMA DE SENHA =====
     if (strlen($nova_senha) < 8) {
         $_SESSION['erro'] = 'A nova senha deve ter no mínimo 8 caracteres.';
         header('Location: configuracoes');
@@ -102,7 +94,6 @@ if ($acao === 'alterar_senha') {
     }
 
     if (strlen($nova_senha) > 72) {
-        // bcrypt (usado pelo password_hash) ignora caracteres além de 72 bytes
         $_SESSION['erro'] = 'A nova senha não pode ter mais de 72 caracteres.';
         header('Location: configuracoes');
         exit;
@@ -114,7 +105,6 @@ if ($acao === 'alterar_senha') {
         exit;
     }
 
-    // Evita reutilizar a mesma senha atual
     if (password_verify($nova_senha, $dadosUsuario['senha'])) {
         $_SESSION['erro'] = 'A nova senha deve ser diferente da senha atual.';
         header('Location: configuracoes');

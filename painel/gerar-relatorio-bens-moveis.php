@@ -2,19 +2,16 @@
 session_start();
 require_once 'conexao.php';
 
-// Requer o autoload do Composer (necessário: composer require dompdf/dompdf)
 require_once 'vendor/autoload.php';
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
-// Bloqueia qualquer método que não seja POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: relatorio-bens-moveis');
     exit;
 }
 
-// Redireciona para login se não houver sessão ativa
 if (!isset($_SESSION['usuario'])) {
     header('Location: login');
     exit;

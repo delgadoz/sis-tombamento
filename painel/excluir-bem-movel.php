@@ -2,13 +2,11 @@
 session_start();
 require_once 'conexao.php';
 
-// Bloqueia qualquer método que não seja POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: alterar-bem-movel');
     exit;
 }
 
-// Redireciona para login se não houver sessão ativa
 if (!isset($_SESSION['usuario'])) {
     header('Location: login');
     exit;
@@ -26,7 +24,6 @@ if (empty($token_recebido) || !hash_equals($token_sessao, $token_recebido)) {
 
 unset($_SESSION['csrf_token']);
 
-// ===== COLETA E VALIDAÇÃO DO ID =====
 $id_bem      = trim($_POST['bem_id']  ?? '');
 $cnpj_logado = $_SESSION['cnpj'];
 
@@ -37,7 +34,6 @@ if (empty($id_bem) || !ctype_digit($id_bem)) {
 }
 
 // ===== VERIFICA SE O BEM EXISTE E PERTENCE AO CNPJ DO USUÁRIO =====
-// Impede exclusão de registros de outros CNPJs mesmo com ID adulterado via POST
 try {
     $stmtVerifica = $pdo->prepare(
         "SELECT id, numero_tombamento, imagens
@@ -84,7 +80,6 @@ try {
 }
 
 // ===== REMOVE AS IMAGENS DO SERVIDOR =====
-// Executado após a exclusão do banco para garantir consistência
 if (!empty($bem['imagens'])) {
     $urlsImagens = json_decode($bem['imagens'], true);
     if (is_array($urlsImagens)) {

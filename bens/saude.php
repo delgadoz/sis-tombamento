@@ -423,7 +423,6 @@ footer .divider {
 <header class="site-header">
     <div class="logo-area">
         <div class="logo-placeholder">
-            <!-- Substitua o conteúdo abaixo por <img src="logo.png" alt="Logo"> -->
             <img src="imgs/logo-saude.png" alt="Logotipo da Saúde" class="logo-placeholder">
         </div>
         <div class="logo-text">

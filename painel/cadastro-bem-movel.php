@@ -12,7 +12,6 @@ if (!isset($_SESSION['usuario'])) {
     exit;
 }
 
-// ===== PROTEÇÃO CSRF =====
 $token_recebido = $_POST['csrf_token']    ?? '';
 $token_sessao   = $_SESSION['csrf_token'] ?? '';
 
@@ -206,7 +205,6 @@ if (!empty($unidade)) {
 
 // ===== VERIFICA SE O(S) Nº DE TOMBAMENTO JÁ EXIST(E/EM) =====
 if ($tombamento_massa) {
-    // Monta a faixa de números que serão inseridos e verifica conflitos
     $numInicio = (int) $numero_tombamento;
     $numFim    = $numInicio + $quantidade_massa - 1;
 

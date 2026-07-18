@@ -2,13 +2,11 @@
 session_start();
 require_once 'conexao.php';
 
-// Bloqueia qualquer método que não seja POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: cadastrar-unidade');
     exit;
 }
 
-// Redireciona para login se não houver sessão ativa
 if (!isset($_SESSION['usuario'])) {
     header('Location: login');
     exit;
@@ -24,7 +22,6 @@ if (empty($token_recebido) || !hash_equals($token_sessao, $token_recebido)) {
     exit;
 }
 
-// Invalida o token após uso (token de uso único)
 unset($_SESSION['csrf_token']);
 
 // ===== VALIDAÇÃO DOS CAMPOS =====
@@ -63,7 +60,6 @@ if (strlen($descricao) > 255) {
     exit;
 }
 
-// ===== VERIFICA SE O SETOR EXISTE NO BANCO =====
 try {
     $sqlSetor = "SELECT id FROM setores WHERE descricao = :setor LIMIT 1";
     $stmtSetor = $pdo->prepare($sqlSetor);

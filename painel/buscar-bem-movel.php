@@ -1,12 +1,12 @@
 <?php
 session_start();
 require_once 'conexao.php';
-// Bloqueia qualquer método que não seja GET
+
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     http_response_code(405);
     exit;
 }
-// Exige sessão ativa
+
 if (!isset($_SESSION['usuario'])) {
     http_response_code(401);
     exit;
@@ -14,7 +14,7 @@ if (!isset($_SESSION['usuario'])) {
 $usuario = $_SESSION['usuario'];
 header('Content-Type: application/json; charset=utf-8');
 $numero_tombamento = trim($_GET['numero_tombamento'] ?? '');
-// Valida se o parâmetro foi enviado e é numérico
+
 if ($numero_tombamento === '' || !ctype_digit($numero_tombamento)) {
     echo json_encode(null);
     exit;

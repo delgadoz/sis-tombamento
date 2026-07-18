@@ -10,7 +10,6 @@ if (!isset($_SESSION['usuario'])) {
 $nome_completo = $_SESSION['nome'];
 $cnpj          = $_SESSION['cnpj'];
 
-// Busca os setores cadastrados
 try {
     $stmt    = $pdo->query("SELECT id, descricao FROM setores ORDER BY descricao ASC");
     $setores = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -18,7 +17,6 @@ try {
     $setores = [];
 }
 
-// Busca os grupos cadastrados
 try {
     $stmtG  = $pdo->query("SELECT id, nome FROM grupos ORDER BY nome ASC");
     $grupos = $stmtG->fetchAll(PDO::FETCH_ASSOC);
@@ -727,7 +725,7 @@ try {
                         <button type="button" class="btn-excluir" id="btnExcluir" disabled>🗑️ Excluir</button>
                     </div>
 
-                </div><!-- /.campos-bem -->
+                </div>
             </form>
         </div>
 
@@ -873,9 +871,6 @@ try {
         function preencherFormulario(bem) {
             idBemInput.value = bem.id;
 
-            // `dentro_prazo` deve vir do buscar-bem-movel.php (true/false).
-            // Se o campo não vier (ex.: endpoint ainda não atualizado), assume-se
-            // o modo mais seguro (restrito) para não permitir edição indevida.
             aplicarModoEdicao(bem.dentro_prazo === true || bem.dentro_prazo === 1 || bem.dentro_prazo === '1');
 
             setVal('descricao',      bem.descricao      ?? '');

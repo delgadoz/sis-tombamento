@@ -425,7 +425,6 @@ footer .divider {
 <header class="site-header">
     <div class="logo-area">
         <div class="logo-placeholder">
-            <!-- Substitua o conteúdo abaixo por <img src="logo.png" alt="Logo"> -->
             <img src="imgs/logo-prefeitura.png" alt="Logotipo da Prefeitura" class="logo-placeholder">
         </div>
         <div class="logo-text">
