@@ -3,11 +3,11 @@ require_once '../painel/conexao.php';
 
 try {
     if (!empty($_GET['tombamento'])) {
-        $stmt = $pdo->prepare("SELECT * FROM bens_moveis WHERE numero_tombamento = :tombamento and cnpj = 'saude' LIMIT 1");
+        $stmt = $pdo->prepare("SELECT b.*, t.tipo FROM bens_moveis b INNER JOIN tipos t ON t.id = b.tipo_id WHERE b.numero_tombamento = :tombamento and b.cnpj = 'saude' LIMIT 1");
         $stmt->bindParam(':tombamento', $_GET['tombamento'], PDO::PARAM_STR);
         $stmt->execute();
     } else {
-        $stmt = $pdo->query("SELECT * FROM bens_moveis WHERE cnpj = 'saude' ORDER BY id ASC LIMIT 1");
+        $stmt = $pdo->query("SELECT b.*, t.tipo FROM bens_moveis b INNER JOIN tipos t ON t.id = b.tipo_id WHERE b.cnpj = 'saude' ORDER BY b.id ASC LIMIT 1");
     }
 
     $item = $stmt->fetch(PDO::FETCH_ASSOC);
