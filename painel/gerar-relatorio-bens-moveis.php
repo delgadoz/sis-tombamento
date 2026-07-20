@@ -127,9 +127,10 @@ $colunaOrdenacao = $colunasOrdenacao[$ordenarPorEscolhido] ?? 'numero_tombamento
 
 // ===== MONTAGEM E EXECUÇÃO DA QUERY =====
 $sql = "SELECT b.id, b.numero_tombamento, b.descricao, b.marca, b.setor, b.subsetor, b.unidade,
-               g.nome AS grupo, b.estado, b.tipo, b.valor, b.data_aquisicao
+               g.nome AS grupo, b.estado, t.tipo, b.valor, b.data_aquisicao
         FROM bens_moveis b
-        INNER JOIN grupos g ON g.id = b.grupo_id";
+        INNER JOIN grupos g ON g.id = b.grupo_id
+        INNER JOIN tipos t ON t.id = b.tipo_id";
 
 if (!empty($condicoes)) {
     $sql .= ' WHERE ' . implode(' AND ', $condicoes);

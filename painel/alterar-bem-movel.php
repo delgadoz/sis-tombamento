@@ -23,6 +23,14 @@ try {
 } catch (PDOException $e) {
     $grupos = [];
 }
+
+// Busca os tipos cadastrados
+try {
+    $stmtTp = $pdo->query("SELECT id, tipo FROM tipos ORDER BY tipo ASC");
+    $tipos  = $stmtTp->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $tipos = [];
+}
 ?>
 
 <!DOCTYPE html>
@@ -688,11 +696,13 @@ try {
                             <div class="form-group">
                                 <label for="tipo">Tipo</label>
                                 <div class="select-wrapper">
-                                    <select id="tipo" name="tipo" required>
+                                    <select id="tipo" name="tipo_id" required>
                                         <option value="" disabled selected>Selecione o tipo</option>
-                                        <option value="gestão anterior">Gestão Anterior</option>
-                                        <option value="aquisição">Aquisição</option>
-                                        <option value="doação">Doação</option>
+                                        <?php foreach ($tipos as $t): ?>
+                                            <option value="<?= (int) $t['id'] ?>">
+                                                <?= htmlspecialchars(ucfirst($t['tipo'])) ?>
+                                            </option>
+                                        <?php endforeach; ?>
                                     </select>
                                 </div>
                             </div>
@@ -880,7 +890,7 @@ try {
             setVal('numero_nota',    bem.numero_nota    ?? '');
             setVal('grupo',          bem.grupo_id       ?? '');
             setVal('estado',         bem.estado         ?? '');
-            setVal('tipo',           bem.tipo           ?? '');
+            setVal('tipo',           bem.tipo_id        ?? '');
 
             // Custo: formata e preenche os dois campos
             const valorNum = parseFloat(bem.valor ?? 0);

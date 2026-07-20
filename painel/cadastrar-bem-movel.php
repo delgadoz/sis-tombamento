@@ -26,6 +26,14 @@ try {
     $grupos = [];
 }
 
+// Busca os tipos cadastrados
+try {
+    $stmtTp = $pdo->query("SELECT id, tipo FROM tipos ORDER BY tipo ASC");
+    $tipos  = $stmtTp->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $tipos = [];
+}
+
 // Busca o último número de tombamento cadastrado pelo usuário logado
 $proximoTombamento = 1;
 
@@ -789,11 +797,13 @@ try {
                         <div class="form-group">
                             <label for="tipo">Tipo</label>
                             <div class="select-wrapper">
-                                <select id="tipo" name="tipo" required>
+                                <select id="tipo" name="tipo_id" required>
                                     <option value="" disabled selected>Selecione o tipo</option>
-                                    <option value="gestão anterior">Gestão Anterior</option>
-                                    <option value="aquisição">Aquisição</option>
-                                    <option value="doação">Doação</option>
+                                    <?php foreach ($tipos as $t): ?>
+                                        <option value="<?= (int) $t['id'] ?>">
+                                            <?= htmlspecialchars(ucfirst($t['tipo'])) ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
@@ -931,8 +941,8 @@ try {
                     document.getElementById('numero_nota').value    = data.numero_nota    || '';
                     document.getElementById('data_aquisicao').value = data.data_aquisicao || '';
 
-                    if (data.tipo) {
-                        document.getElementById('tipo').value = data.tipo;
+                    if (data.tipo_id) {
+                        document.getElementById('tipo').value = data.tipo_id;
                     }
 
                     if (data.setor) {

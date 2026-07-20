@@ -36,7 +36,7 @@ $subsetor        = trim($_POST['subsetor']         ?? '');
 $unidade         = trim($_POST['unidade']          ?? '');
 $grupo_id        = trim($_POST['grupo_id']         ?? '');
 $estado          = trim($_POST['estado']           ?? '');
-$tipo            = trim($_POST['tipo']             ?? '');
+$tipo_id         = trim($_POST['tipo_id']           ?? '');
 $valor_raw       = trim($_POST['valor']            ?? '');
 
 $usuario_logado  = $_SESSION['usuario'];
@@ -175,10 +175,24 @@ if (empty($estado) || !in_array($estado, $estados_validos, true)) {
 }
 
 if ($edicao_completa) {
-    // Tipos permitidos
-    $tipos_validos = ['gestão anterior', 'aquisição', 'doação'];
-    if (empty($tipo) || !in_array($tipo, $tipos_validos, true)) {
+    // Tipo: valida formato e existência no banco
+    if ($tipo_id === '' || !ctype_digit($tipo_id)) {
         $_SESSION['erro'] = 'Tipo inválido.';
+        header('Location: alterar-bem-movel');
+        exit;
+    }
+
+    try {
+        $stmtTp = $pdo->prepare("SELECT id FROM tipos WHERE id = :id LIMIT 1");
+        $stmtTp->bindParam(':id', $tipo_id, PDO::PARAM_INT);
+        $stmtTp->execute();
+        if (!$stmtTp->fetch()) {
+            $_SESSION['erro'] = 'O tipo selecionado é inválido.';
+            header('Location: alterar-bem-movel');
+            exit;
+        }
+    } catch (PDOException $e) {
+        $_SESSION['erro'] = 'Erro interno ao verificar o tipo. Tente novamente.';
         header('Location: alterar-bem-movel');
         exit;
     }
@@ -207,7 +221,7 @@ try {
                     unidade         = :unidade,
                     grupo_id        = :grupo_id,
                     estado          = :estado,
-                    tipo            = :tipo,
+                    tipo_id         = :tipo_id,
                     valor           = :valor,
                     updated_by      = :updated_by,
                     updated_at      = NOW()
@@ -225,7 +239,7 @@ try {
         $stmt->bindParam(':unidade',        $unidade,        PDO::PARAM_STR);
         $stmt->bindParam(':grupo_id',       $grupo_id,       PDO::PARAM_INT);
         $stmt->bindParam(':estado',         $estado,         PDO::PARAM_STR);
-        $stmt->bindParam(':tipo',           $tipo,           PDO::PARAM_STR);
+        $stmt->bindParam(':tipo_id',        $tipo_id,        PDO::PARAM_INT);
         $stmt->bindParam(':valor',          $valor,          PDO::PARAM_STR);
         $stmt->bindParam(':updated_by',     $usuario_logado, PDO::PARAM_STR);
         $stmt->bindParam(':id',             $id_bem,         PDO::PARAM_INT);

@@ -25,7 +25,7 @@ if ($numero_tombamento === '' || !ctype_digit($numero_tombamento)) {
 // ===== BUSCA NO BANCO =====
 try {
     $stmt = $pdo->prepare(
-        "SELECT numero_empenho, data_aquisicao, numero_nota, setor, subsetor, tipo
+        "SELECT numero_empenho, data_aquisicao, numero_nota, setor, subsetor, tipo_id
          FROM bens_moveis
          WHERE numero_tombamento = :t AND cnpj = :c
          LIMIT 1"
@@ -47,7 +47,7 @@ try {
         'numero_nota'    => $bem['numero_nota'],
         'setor'          => $bem['setor'],
         'subsetor'       => $bem['subsetor'],
-        'tipo'           => $bem['tipo'],
+        'tipo_id'        => $bem['tipo_id'],
     ]);
 
 } catch (PDOException $e) {

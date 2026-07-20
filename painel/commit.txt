@@ -1,0 +1,31 @@
+refactor(bens-moveis): migrar coluna tipo de texto para foreign key tipo_id
+
+Substitui o campo `bens_moveis.tipo` (varchar com whitelist fixa no
+código) por `bens_moveis.tipo_id`, referenciando a tabela `tipos`,
+seguindo o mesmo padrão já adotado para `grupo_id` -> `grupos`.
+
+Banco de dados:
+- Adiciona UNIQUE KEY em tipos.tipo
+- Migra os dados de bens_moveis.tipo para a nova coluna tipo_id
+- Remove a coluna tipo (texto) e cria a FK fk_bens_moveis_tipo
+  (ON UPDATE CASCADE)
+
+Backend:
+- cadastro-bem-movel.php / alteracao-bem-movel.php: troca a
+  validação por whitelist fixa por validação de formato (ctype_digit)
+  + checagem de existência do tipo_id no banco
+- buscar-bem-movel.php / buscar-bem-por-tombamento.php: passam a
+  retornar tipo_id em vez do texto do tipo
+- gerar-relatorio-bens-moveis.php: adiciona JOIN com tipos para
+  continuar exibindo a descrição do tipo no relatório em PDF
+
+Frontend:
+- cadastrar-bem-movel.php / alterar-bem-movel.php: select de Tipo
+  passa a ser populado dinamicamente a partir do banco (name="tipo_id")
+  em vez de opções fixas no HTML
+- Ajusta JS de preenchimento/reciclagem de formulário para usar
+  tipo_id no lugar do texto do tipo
+
+BREAKING CHANGE: a coluna bens_moveis.tipo foi removida do banco;
+qualquer integração externa que dependa dela precisa migrar para
+tipo_id + JOIN com tipos.

@@ -33,9 +33,9 @@ $numero_nota       = trim($_POST['numero_nota']       ?? '');
 $setor             = trim($_POST['setor']             ?? '');
 $subsetor          = trim($_POST['subsetor']          ?? '');
 $unidade           = trim($_POST['unidade']           ?? '');
-$grupo_id          = trim($_POST['grupo_id']           ?? '');
+$grupo_id          = trim($_POST['grupo_id']          ?? '');
 $estado            = trim($_POST['estado']            ?? '');
-$tipo              = trim($_POST['tipo']              ?? '');
+$tipo_id           = trim($_POST['tipo_id']            ?? '');
 $valor             = trim($_POST['valor']             ?? '');
 $created_by        = $_SESSION['usuario'];
 $cnpj              = $_SESSION['cnpj'];
@@ -44,7 +44,6 @@ $quantidade_massa  = (int) trim($_POST['quantidade_massa'] ?? 1);
 
 // ===== VALORES PERMITIDOS (WHITELIST) =====
 $estados_permitidos = ['Novo', 'Bom', 'Regular', 'Ruim', 'Depreciado', 'Inservivel'];
-$tipos_permitidos   = ['gestão anterior', 'aquisição', 'doação'];
 
 // ===== VALIDAÇÕES OBRIGATÓRIAS =====
 $erros = [];
@@ -58,7 +57,7 @@ if (empty($setor))                     $erros[] = 'O Setor é obrigatório.';
 if (empty($subsetor))                  $erros[] = 'O Subsetor é obrigatório.';
 if ($grupo_id === '')                  $erros[] = 'O Grupo é obrigatório.';
 if (empty($estado))                    $erros[] = 'O Estado é obrigatório.';
-if (empty($tipo))                      $erros[] = 'O Tipo é obrigatório.';
+if ($tipo_id === '')                   $erros[] = 'O Tipo é obrigatório.';
 if ($valor === '' || $valor === false)  $erros[] = 'O Custo é obrigatório.';
 
 if (!empty($erros)) {
@@ -105,13 +104,15 @@ if (!ctype_digit($grupo_id)) {
     exit;
 }
 
-// Whitelist: estado, tipo
+// Whitelist: estado
 if (!in_array($estado, $estados_permitidos, true)) {
     $_SESSION['erro'] = 'Estado inválido.';
     header('Location: cadastrar-bem-movel');
     exit;
 }
-if (!in_array($tipo, $tipos_permitidos, true)) {
+
+// Formato do Tipo (deve ser um ID numérico; a existência é checada no banco mais abaixo)
+if (!ctype_digit($tipo_id)) {
     $_SESSION['erro'] = 'Tipo inválido.';
     header('Location: cadastrar-bem-movel');
     exit;
@@ -141,6 +142,22 @@ try {
     $stmtG->execute();
     if (!$stmtG->fetch()) {
         $_SESSION['erro'] = 'O grupo selecionado é inválido.';
+        header('Location: cadastrar-bem-movel');
+        exit;
+    }
+} catch (PDOException $e) {
+    $_SESSION['erro'] = 'Erro interno. Tente novamente.';
+    header('Location: cadastrar-bem-movel');
+    exit;
+}
+
+// ===== VERIFICA SE O TIPO EXISTE NO BANCO =====
+try {
+    $stmtTp = $pdo->prepare("SELECT id FROM tipos WHERE id = :id LIMIT 1");
+    $stmtTp->bindParam(':id', $tipo_id, PDO::PARAM_INT);
+    $stmtTp->execute();
+    if (!$stmtTp->fetch()) {
+        $_SESSION['erro'] = 'O tipo selecionado é inválido.';
         header('Location: cadastrar-bem-movel');
         exit;
     }
@@ -329,10 +346,10 @@ $imagensJson = json_encode($urlsImagens);
 try {
     $sql = "INSERT INTO bens_moveis 
                 (numero_tombamento, descricao, marca, numero_empenho, data_aquisicao,
-                 numero_nota, setor, subsetor, unidade, grupo_id, estado, tipo, valor, imagens, created_by, cnpj, setor_original)
+                 numero_nota, setor, subsetor, unidade, grupo_id, estado, tipo_id, valor, imagens, created_by, cnpj, setor_original)
             VALUES 
                 (:numero_tombamento, :descricao, :marca, :numero_empenho, :data_aquisicao,
-                 :numero_nota, :setor, :subsetor, :unidade, :grupo_id, :estado, :tipo, :valor, :imagens, :created_by, :cnpj,   :setor_original)";
+                 :numero_nota, :setor, :subsetor, :unidade, :grupo_id, :estado, :tipo_id, :valor, :imagens, :created_by, :cnpj,   :setor_original)";
 
     $stmt = $pdo->prepare($sql);
 
@@ -359,7 +376,7 @@ try {
         $stmt->bindParam(':unidade',           $unidade,        PDO::PARAM_STR);
         $stmt->bindParam(':grupo_id',          $grupo_id,       PDO::PARAM_INT);
         $stmt->bindParam(':estado',            $estado,         PDO::PARAM_STR);
-        $stmt->bindParam(':tipo',              $tipo,           PDO::PARAM_STR);
+        $stmt->bindParam(':tipo_id',           $tipo_id,        PDO::PARAM_INT);
         $stmt->bindParam(':valor',             $valor,          PDO::PARAM_STR);
         $stmt->bindParam(':imagens',           $imagensJson,    PDO::PARAM_STR);
         $stmt->bindParam(':created_by',        $created_by,     PDO::PARAM_STR);

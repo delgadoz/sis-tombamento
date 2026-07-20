@@ -35,7 +35,7 @@ try {
             unidade,
             grupo_id,
             estado,
-            tipo,
+            tipo_id,
             valor,
             (created_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)) AS dentro_prazo
          FROM bens_moveis
