@@ -726,6 +726,20 @@ try {
                     <div class="form-grid">
 
                         <div class="form-group">
+                            <label for="setor_origem">Setor de Origem</label>
+                            <div class="select-wrapper">
+                                <select id="setor_origem" name="setor_origem" required>
+                                    <option value="" disabled selected>Selecione o setor de origem</option>
+                                    <?php foreach ($setores as $s): ?>
+                                        <option value="<?= htmlspecialchars($s['descricao']) ?>">
+                                            <?= htmlspecialchars($s['descricao']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
                             <label for="setor">Setor</label>
                             <div class="select-wrapper">
                                 <select id="setor" name="setor" required>
@@ -859,6 +873,7 @@ try {
 
     <script>
         // ===== SELECTS DINÂMICOS =====
+        const selectSetorOrigem = document.getElementById('setor_origem');
         const selectSetor     = document.getElementById('setor');
         const selectSubsetor  = document.getElementById('subsetor');
         const selectUnidade   = document.getElementById('unidade');
@@ -911,6 +926,14 @@ try {
             carregarSubsetores(this.value);
         });
 
+        // Ao selecionar o Setor de Origem, preenche automaticamente o campo Setor
+        // com o mesmo valor (o usuário pode alterá-lo depois, se o setor atual
+        // do bem for diferente do setor de origem constante na nota).
+        selectSetorOrigem.addEventListener('change', function () {
+            selectSetor.value = this.value;
+            selectSetor.dispatchEvent(new Event('change'));
+        });
+
         // ===== REAPROVEITAR DADOS (RECICLAGEM) =====
         // Busca um bem já cadastrado pelo Nº de Tombamento informado e preenche
         // Nº do Empenho, Data de Aquisição, Nº da Nota, Setor, Subsetor e Tipo,
@@ -943,6 +966,10 @@ try {
 
                     if (data.tipo_id) {
                         document.getElementById('tipo').value = data.tipo_id;
+                    }
+
+                    if (data.setor_original) {
+                        selectSetorOrigem.value = data.setor_original;
                     }
 
                     if (data.setor) {

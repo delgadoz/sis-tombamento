@@ -625,6 +625,20 @@ try {
                         <div class="form-grid">
 
                             <div class="form-group">
+                                <label for="setor_origem">Setor de Origem</label>
+                                <div class="select-wrapper">
+                                    <select id="setor_origem" name="setor_origem" required>
+                                        <option value="" disabled selected>Selecione o setor de origem</option>
+                                        <?php foreach ($setores as $s): ?>
+                                            <option value="<?= htmlspecialchars($s['descricao']) ?>">
+                                                <?= htmlspecialchars($s['descricao']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
                                 <label for="setor">Setor</label>
                                 <div class="select-wrapper">
                                     <select id="setor" name="setor" required>
@@ -783,7 +797,7 @@ try {
         // continuam editáveis independentemente do prazo.
         const CAMPOS_PRAZO_LIMITADO = [
             'descricao', 'marca', 'numero_empenho', 'data_aquisicao',
-            'numero_nota', 'grupo', 'tipo', 'valor_display'
+            'numero_nota', 'setor_origem', 'grupo', 'tipo', 'valor_display'
         ];
 
         // ===== HABILITA/BLOQUEIA CAMPOS CONFORME O PRAZO DE EDIÇÃO =====
@@ -888,6 +902,7 @@ try {
             setVal('numero_empenho', bem.numero_empenho ?? '');
             setVal('data_aquisicao', bem.data_aquisicao ?? '');
             setVal('numero_nota',    bem.numero_nota    ?? '');
+            setVal('setor_origem',   bem.setor_original ?? '');
             setVal('grupo',          bem.grupo_id       ?? '');
             setVal('estado',         bem.estado         ?? '');
             setVal('tipo',           bem.tipo_id        ?? '');

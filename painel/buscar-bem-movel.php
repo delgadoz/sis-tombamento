@@ -31,6 +31,7 @@ try {
             DATE_FORMAT(data_aquisicao, '%Y-%m-%d') AS data_aquisicao,
             numero_nota,
             setor,
+            setor_original,
             subsetor,
             unidade,
             grupo_id,

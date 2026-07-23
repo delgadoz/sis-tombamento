@@ -30,6 +30,7 @@ $marca             = trim($_POST['marca']             ?? '');
 $numero_empenho    = trim($_POST['numero_empenho']    ?? '');
 $data_aquisicao    = trim($_POST['data_aquisicao']    ?? '');
 $numero_nota       = trim($_POST['numero_nota']       ?? '');
+$setor_origem      = trim($_POST['setor_origem']      ?? '');
 $setor             = trim($_POST['setor']             ?? '');
 $subsetor          = trim($_POST['subsetor']          ?? '');
 $unidade           = trim($_POST['unidade']           ?? '');
@@ -53,6 +54,7 @@ if (empty($descricao))                 $erros[] = 'A Descrição é obrigatória
 if (empty($numero_empenho))            $erros[] = 'O Nº do Empenho é obrigatório.';
 if (empty($data_aquisicao))            $erros[] = 'A Data de Aquisição é obrigatória.';
 if (empty($numero_nota))               $erros[] = 'O Nº da Nota é obrigatório.';
+if (empty($setor_origem))              $erros[] = 'O Setor de Origem é obrigatório.';
 if (empty($setor))                     $erros[] = 'O Setor é obrigatório.';
 if (empty($subsetor))                  $erros[] = 'O Subsetor é obrigatório.';
 if ($grupo_id === '')                  $erros[] = 'O Grupo é obrigatório.';
@@ -158,6 +160,22 @@ try {
     $stmtTp->execute();
     if (!$stmtTp->fetch()) {
         $_SESSION['erro'] = 'O tipo selecionado é inválido.';
+        header('Location: cadastrar-bem-movel');
+        exit;
+    }
+} catch (PDOException $e) {
+    $_SESSION['erro'] = 'Erro interno. Tente novamente.';
+    header('Location: cadastrar-bem-movel');
+    exit;
+}
+
+// ===== VERIFICA SE O SETOR DE ORIGEM EXISTE NO BANCO =====
+try {
+    $stmtSO = $pdo->prepare("SELECT id FROM setores WHERE descricao = :v LIMIT 1");
+    $stmtSO->bindParam(':v', $setor_origem, PDO::PARAM_STR);
+    $stmtSO->execute();
+    if (!$stmtSO->fetch()) {
+        $_SESSION['erro'] = 'O setor de origem selecionado é inválido.';
         header('Location: cadastrar-bem-movel');
         exit;
     }
@@ -381,7 +399,7 @@ try {
         $stmt->bindParam(':imagens',           $imagensJson,    PDO::PARAM_STR);
         $stmt->bindParam(':created_by',        $created_by,     PDO::PARAM_STR);
         $stmt->bindParam(':cnpj',              $cnpj,           PDO::PARAM_STR);
-		$stmt->bindParam(':setor_original',    $setor,          PDO::PARAM_STR);
+		$stmt->bindParam(':setor_original',    $setor_origem,   PDO::PARAM_STR);
         $stmt->execute();
     }
 

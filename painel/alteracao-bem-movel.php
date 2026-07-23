@@ -31,6 +31,7 @@ $marca           = trim($_POST['marca']            ?? '');
 $numero_empenho  = trim($_POST['numero_empenho']   ?? '');
 $data_aquisicao  = trim($_POST['data_aquisicao']   ?? '');
 $numero_nota     = trim($_POST['numero_nota']      ?? '');
+$setor_origem    = trim($_POST['setor_origem']     ?? '');
 $setor           = trim($_POST['setor']            ?? '');
 $subsetor        = trim($_POST['subsetor']         ?? '');
 $unidade         = trim($_POST['unidade']          ?? '');
@@ -127,6 +128,28 @@ if ($edicao_completa) {
         header('Location: alterar-bem-movel');
         exit;
     }
+
+    // Setor de Origem: só pode ser alterado dentro do prazo de 3 dias
+    if (empty($setor_origem)) {
+        $_SESSION['erro'] = 'O campo Setor de Origem é obrigatório.';
+        header('Location: alterar-bem-movel');
+        exit;
+    }
+
+    try {
+        $stmtSO = $pdo->prepare("SELECT id FROM setores WHERE descricao = :v LIMIT 1");
+        $stmtSO->bindParam(':v', $setor_origem, PDO::PARAM_STR);
+        $stmtSO->execute();
+        if (!$stmtSO->fetch()) {
+            $_SESSION['erro'] = 'O setor de origem selecionado é inválido.';
+            header('Location: alterar-bem-movel');
+            exit;
+        }
+    } catch (PDOException $e) {
+        $_SESSION['erro'] = 'Erro interno ao verificar o setor de origem. Tente novamente.';
+        header('Location: alterar-bem-movel');
+        exit;
+    }
 }
 
 // ===== VALIDAÇÃO: SETOR / SUBSETOR (SEMPRE OBRIGATÓRIOS, EDITÁVEIS EM QUALQUER PRAZO) =====
@@ -217,6 +240,7 @@ try {
                     data_aquisicao  = :data_aquisicao,
                     numero_nota     = :numero_nota,
                     setor           = :setor,
+                    setor_original  = :setor_original,
                     subsetor        = :subsetor,
                     unidade         = :unidade,
                     grupo_id        = :grupo_id,
@@ -235,6 +259,7 @@ try {
         $stmt->bindParam(':data_aquisicao', $data_aquisicao, PDO::PARAM_STR);
         $stmt->bindParam(':numero_nota',    $numero_nota,    PDO::PARAM_STR);
         $stmt->bindParam(':setor',          $setor,          PDO::PARAM_STR);
+        $stmt->bindParam(':setor_original', $setor_origem,   PDO::PARAM_STR);
         $stmt->bindParam(':subsetor',       $subsetor,       PDO::PARAM_STR);
         $stmt->bindParam(':unidade',        $unidade,        PDO::PARAM_STR);
         $stmt->bindParam(':grupo_id',       $grupo_id,       PDO::PARAM_INT);
