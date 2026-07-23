@@ -731,7 +731,7 @@ try {
                                 <select id="setor_origem" name="setor_origem" required>
                                     <option value="" disabled selected>Selecione o setor de origem</option>
                                     <?php foreach ($setores as $s): ?>
-                                        <option value="<?= htmlspecialchars($s['descricao']) ?>">
+                                        <option value="<?= (int) $s['id'] ?>">
                                             <?= htmlspecialchars($s['descricao']) ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -930,7 +930,8 @@ try {
         // com o mesmo valor (o usuário pode alterá-lo depois, se o setor atual
         // do bem for diferente do setor de origem constante na nota).
         selectSetorOrigem.addEventListener('change', function () {
-            selectSetor.value = this.value;
+            const descricaoSelecionada = this.options[this.selectedIndex].text.trim();
+            selectSetor.value = descricaoSelecionada;
             selectSetor.dispatchEvent(new Event('change'));
         });
 

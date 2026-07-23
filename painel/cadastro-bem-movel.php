@@ -170,9 +170,15 @@ try {
 }
 
 // ===== VERIFICA SE O SETOR DE ORIGEM EXISTE NO BANCO =====
+if ($setor_origem === '' || !ctype_digit($setor_origem)) {
+    $_SESSION['erro'] = 'O setor de origem selecionado é inválido.';
+    header('Location: cadastrar-bem-movel');
+    exit;
+}
+
 try {
-    $stmtSO = $pdo->prepare("SELECT id FROM setores WHERE descricao = :v LIMIT 1");
-    $stmtSO->bindParam(':v', $setor_origem, PDO::PARAM_STR);
+    $stmtSO = $pdo->prepare("SELECT id FROM setores WHERE id = :v LIMIT 1");
+    $stmtSO->bindParam(':v', $setor_origem, PDO::PARAM_INT);
     $stmtSO->execute();
     if (!$stmtSO->fetch()) {
         $_SESSION['erro'] = 'O setor de origem selecionado é inválido.';
@@ -399,7 +405,7 @@ try {
         $stmt->bindParam(':imagens',           $imagensJson,    PDO::PARAM_STR);
         $stmt->bindParam(':created_by',        $created_by,     PDO::PARAM_STR);
         $stmt->bindParam(':cnpj',              $cnpj,           PDO::PARAM_STR);
-		$stmt->bindParam(':setor_original',    $setor_origem,   PDO::PARAM_STR);
+		$stmt->bindParam(':setor_original',    $setor_origem,   PDO::PARAM_INT);
         $stmt->execute();
     }
 

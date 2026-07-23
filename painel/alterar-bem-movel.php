@@ -630,7 +630,7 @@ try {
                                     <select id="setor_origem" name="setor_origem" required>
                                         <option value="" disabled selected>Selecione o setor de origem</option>
                                         <?php foreach ($setores as $s): ?>
-                                            <option value="<?= htmlspecialchars($s['descricao']) ?>">
+                                            <option value="<?= (int) $s['id'] ?>">
                                                 <?= htmlspecialchars($s['descricao']) ?>
                                             </option>
                                         <?php endforeach; ?>

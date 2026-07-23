@@ -130,15 +130,15 @@ if ($edicao_completa) {
     }
 
     // Setor de Origem: só pode ser alterado dentro do prazo de 3 dias
-    if (empty($setor_origem)) {
+    if ($setor_origem === '' || !ctype_digit($setor_origem)) {
         $_SESSION['erro'] = 'O campo Setor de Origem é obrigatório.';
         header('Location: alterar-bem-movel');
         exit;
     }
 
     try {
-        $stmtSO = $pdo->prepare("SELECT id FROM setores WHERE descricao = :v LIMIT 1");
-        $stmtSO->bindParam(':v', $setor_origem, PDO::PARAM_STR);
+        $stmtSO = $pdo->prepare("SELECT id FROM setores WHERE id = :v LIMIT 1");
+        $stmtSO->bindParam(':v', $setor_origem, PDO::PARAM_INT);
         $stmtSO->execute();
         if (!$stmtSO->fetch()) {
             $_SESSION['erro'] = 'O setor de origem selecionado é inválido.';
@@ -259,7 +259,7 @@ try {
         $stmt->bindParam(':data_aquisicao', $data_aquisicao, PDO::PARAM_STR);
         $stmt->bindParam(':numero_nota',    $numero_nota,    PDO::PARAM_STR);
         $stmt->bindParam(':setor',          $setor,          PDO::PARAM_STR);
-        $stmt->bindParam(':setor_original', $setor_origem,   PDO::PARAM_STR);
+        $stmt->bindParam(':setor_original', $setor_origem,   PDO::PARAM_INT);
         $stmt->bindParam(':subsetor',       $subsetor,       PDO::PARAM_STR);
         $stmt->bindParam(':unidade',        $unidade,        PDO::PARAM_STR);
         $stmt->bindParam(':grupo_id',       $grupo_id,       PDO::PARAM_INT);
