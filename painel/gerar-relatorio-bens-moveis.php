@@ -96,6 +96,15 @@ if (($_POST['unidade_filtro'] ?? 'todos') === 'descricao') {
     }
 }
 
+// --- Setor Original ---
+if (($_POST['setor_original_filtro'] ?? 'todos') === 'descricao') {
+    $setorOriginalValor = trim($_POST['setor_original_valor'] ?? '');
+    if ($setorOriginalValor !== '' && ctype_digit($setorOriginalValor)) {
+        $condicoes[] = 'b.setor_original = :setor_original';
+        $parametros[':setor_original'] = (int) $setorOriginalValor;
+    }
+}
+
 // --- Setor ---
 if (($_POST['setor_filtro'] ?? 'todos') === 'descricao') {
     $setorValor = trim($_POST['setor_valor'] ?? '');
@@ -126,11 +135,12 @@ $ordenarPorEscolhido = $_POST['ordenar_por'] ?? 'tombamento';
 $colunaOrdenacao = $colunasOrdenacao[$ordenarPorEscolhido] ?? 'numero_tombamento';
 
 // ===== MONTAGEM E EXECUÇÃO DA QUERY =====
-$sql = "SELECT b.id, b.numero_tombamento, b.descricao, b.marca, b.setor, b.subsetor, b.unidade,
+$sql = "SELECT b.id, b.numero_tombamento, b.descricao, b.marca, so.descricao AS setor_original, b.setor, b.subsetor, b.unidade,
                g.nome AS grupo, b.estado, t.tipo, b.valor, b.data_aquisicao
         FROM bens_moveis b
         INNER JOIN grupos g ON g.id = b.grupo_id
-        INNER JOIN tipos t ON t.id = b.tipo_id";
+        INNER JOIN tipos t ON t.id = b.tipo_id
+        LEFT JOIN setores so ON so.id = b.setor_original";
 
 if (!empty($condicoes)) {
     $sql .= ' WHERE ' . implode(' AND ', $condicoes);
@@ -319,6 +329,7 @@ ob_start();
                     <th>Tombamento</th>
                     <th>Descrição</th>
                     <th>Marca</th>
+                    <th>Setor Original</th>
                     <th>Setor</th>
                     <th>SubSetor</th>
                     <th>Unidade</th>
@@ -335,6 +346,7 @@ ob_start();
                         <td><?= htmlspecialchars($bem['numero_tombamento']) ?></td>
                         <td><?= htmlspecialchars($bem['descricao']) ?></td>
                         <td><?= htmlspecialchars($bem['marca'] ?? '-') ?></td>
+                        <td><?= htmlspecialchars($bem['setor_original'] ?? '-') ?></td>
                         <td><?= htmlspecialchars($bem['setor']) ?></td>
                         <td><?= htmlspecialchars($bem['subsetor']) ?></td>
                         <td><?= htmlspecialchars($bem['unidade'] ?? '-') ?></td>
@@ -348,7 +360,7 @@ ob_start();
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="10">Valor total</td>
+                    <td colspan="11">Valor total</td>
                     <td class="valor">R$ <?= number_format($valorTotal, 2, ',', '.') ?></td>
                 </tr>
             </tfoot>

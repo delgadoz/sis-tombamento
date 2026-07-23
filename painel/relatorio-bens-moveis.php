@@ -16,9 +16,10 @@ $nome_completo = $_SESSION['nome'];
 $stmtGrupos = $pdo->query("SELECT id, nome FROM grupos ORDER BY nome ASC");
 $grupos = $stmtGrupos->fetchAll(PDO::FETCH_ASSOC);
 
-// Setor
-$stmtSetores = $pdo->query("SELECT descricao FROM setores ORDER BY descricao ASC");
-$setores = $stmtSetores->fetchAll(PDO::FETCH_COLUMN);
+// Setor Original (precisa do id, já que agora é FK) e Setor (mantém descrição, como já era)
+$stmtSetores = $pdo->query("SELECT id, descricao FROM setores ORDER BY descricao ASC");
+$setoresCompletos = $stmtSetores->fetchAll(PDO::FETCH_ASSOC);
+$setores = array_column($setoresCompletos, 'descricao');
 
 ?>
 
@@ -308,6 +309,32 @@ $setores = $stmtSetores->fetchAll(PDO::FETCH_COLUMN);
                         <div class="radio-linha">
                             <input type="radio" id="aquisicao_todos" name="periodo_aquisicao_filtro" value="todos" checked>
                             <label for="aquisicao_todos">Todos</label>
+                        </div>
+                    </div>
+
+                    <!-- SETOR -->
+                    <!-- SETOR ORIGINAL -->
+                    <div class="group-box">
+                        <span class="legend">📦 Setor Original</span>
+
+                        <div class="radio-linha">
+                            <input type="radio" id="setor_original_descricao" name="setor_original_filtro" value="descricao" onchange="atualizarCampo(this)">
+                            <label for="setor_original_descricao">Descrição</label>
+                        </div>
+                        <div class="campo-selecao">
+                            <div class="select-wrapper">
+                                <select name="setor_original_valor" disabled>
+                                    <option value="" disabled selected>Selecione...</option>
+                                    <?php foreach ($setoresCompletos as $so): ?>
+                                        <option value="<?= (int) $so['id'] ?>"><?= htmlspecialchars($so['descricao']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="radio-linha">
+                            <input type="radio" id="setor_original_todos" name="setor_original_filtro" value="todos" checked>
+                            <label for="setor_original_todos">Todos</label>
                         </div>
                     </div>
 
