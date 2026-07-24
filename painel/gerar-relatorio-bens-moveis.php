@@ -382,6 +382,42 @@ $dompdf->setPaper('A4', 'landscape');
 $dompdf->loadHtml($html);
 $dompdf->render();
 
-// Exibe o PDF diretamente no navegador (sem forçar download)
-$dompdf->stream('relatorio-bens-moveis-' . date('Y-m-d_His') . '.pdf', ['Attachment' => false]);
+// ===== GRAVA O PDF EM ARQUIVO TEMPORÁRIO E REDIRECIONA PARA ROTA GET =====
+//
+// Por que não usar $dompdf->stream() direto aqui?
+// stream() responde dentro da MESMA requisição POST que gerou o relatório.
+// O visualizador de PDF embutido do navegador funciona bem para EXIBIR esse
+// conteúdo, mas o botão "salvar/baixar" dele sempre refaz um GET para a
+// mesma URL. Como esta rota só aceita POST, esse GET seria redirecionado
+// (ou barrado), e o navegador acabaria salvando essa resposta de erro/
+// redirecionamento como se fosse o PDF — daí o arquivo sem extensão e a
+// falha ao abrir. Servindo o arquivo por uma rota GET dedicada, o "salvar"
+// do visualizador passa a funcionar normalmente.
+
+$diretorioTemp = __DIR__ . '/tmp_relatorios';
+if (!is_dir($diretorioTemp)) {
+    mkdir($diretorioTemp, 0770, true);
+}
+
+// Remove o relatório anterior desta sessão (se houver) antes de gerar o novo
+if (!empty($_SESSION['relatorio_pdf_arquivo'])) {
+    $arquivoAnterior = $diretorioTemp . '/' . basename($_SESSION['relatorio_pdf_arquivo']);
+    if (is_file($arquivoAnterior)) {
+        @unlink($arquivoAnterior);
+    }
+}
+
+// Limpeza best-effort de relatórios órfãos (sessões abandonadas) com mais de 2h
+foreach (glob($diretorioTemp . '/*.pdf') ?: [] as $arquivoAntigo) {
+    if (filemtime($arquivoAntigo) < time() - 7200) {
+        @unlink($arquivoAntigo);
+    }
+}
+
+$nomeArquivo = 'relatorio-bens-moveis-' . date('Y-m-d_His') . '-' . bin2hex(random_bytes(4)) . '.pdf';
+file_put_contents($diretorioTemp . '/' . $nomeArquivo, $dompdf->output());
+
+$_SESSION['relatorio_pdf_arquivo'] = $nomeArquivo;
+
+header('Location: baixar-relatorio-bens-moveis.php');
 exit;
