@@ -38,10 +38,17 @@ $grupo_id          = trim($_POST['grupo_id']          ?? '');
 $estado            = trim($_POST['estado']            ?? '');
 $tipo_id           = trim($_POST['tipo_id']            ?? '');
 $valor             = trim($_POST['valor']             ?? '');
-$created_by        = $_SESSION['usuario'];
 $cnpj              = $_SESSION['cnpj'];
 $tombamento_massa  = isset($_POST['tombamento_em_massa']) && $_POST['tombamento_em_massa'] === '1';
 $quantidade_massa  = (int) trim($_POST['quantidade_massa'] ?? 1);
+
+// ===== ID DO USUÁRIO LOGADO (created_by é FK para usuarios.id) =====
+if (!isset($_SESSION['usuario_id'])) {
+    $_SESSION['erro'] = 'Sessão inválida. Faça login novamente.';
+    header('Location: login');
+    exit;
+}
+$created_by = $_SESSION['usuario_id'];
 
 // ===== VALORES PERMITIDOS (WHITELIST) =====
 $estados_permitidos = ['Novo', 'Bom', 'Regular', 'Ruim', 'Depreciado', 'Inservivel'];
@@ -403,7 +410,7 @@ try {
         $stmt->bindParam(':tipo_id',           $tipo_id,        PDO::PARAM_INT);
         $stmt->bindParam(':valor',             $valor,          PDO::PARAM_STR);
         $stmt->bindParam(':imagens',           $imagensJson,    PDO::PARAM_STR);
-        $stmt->bindParam(':created_by',        $created_by,     PDO::PARAM_STR);
+        $stmt->bindParam(':created_by',        $created_by,     PDO::PARAM_INT);
         $stmt->bindParam(':cnpj',              $cnpj,           PDO::PARAM_STR);
 		$stmt->bindParam(':setor_original',    $setor_origem,   PDO::PARAM_INT);
         $stmt->execute();

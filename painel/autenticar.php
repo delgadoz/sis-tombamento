@@ -58,7 +58,8 @@ try {
     // Login OK - limpa o histórico de tentativas falhas
     limparTentativas($pdo, $ip, 'ip');
     limparTentativas($pdo, $email, 'email');
-
+	
+	$_SESSION['usuario_id'] = $usuario['id'];
     $_SESSION['usuario'] = $usuario['usuario'];
     $_SESSION['nome']    = $usuario['nome'];
     $_SESSION['email']   = $usuario['email'];

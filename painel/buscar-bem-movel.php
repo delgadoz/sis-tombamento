@@ -11,7 +11,11 @@ if (!isset($_SESSION['usuario'])) {
     http_response_code(401);
     exit;
 }
-$usuario = $_SESSION['usuario'];
+$usuario_id = $_SESSION['usuario_id'] ?? null;
+if ($usuario_id === null) {
+    http_response_code(401);
+    exit;
+}
 header('Content-Type: application/json; charset=utf-8');
 $numero_tombamento = trim($_GET['numero_tombamento'] ?? '');
 
@@ -41,12 +45,12 @@ try {
             (created_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)) AS dentro_prazo
          FROM bens_moveis
          WHERE numero_tombamento = :numero_tombamento
-           AND cnpj = :cnpj AND created_by = :usuario
+           AND cnpj = :cnpj AND created_by = :usuario_id
          LIMIT 1"
     );
     $stmt->bindParam(':numero_tombamento', $numero_tombamento, PDO::PARAM_STR);
     $stmt->bindParam(':cnpj',              $cnpj_logado,       PDO::PARAM_STR);
-	$stmt->bindParam(':usuario',              $usuario,       PDO::PARAM_STR);
+	$stmt->bindParam(':usuario_id',        $usuario_id,        PDO::PARAM_INT);
     $stmt->execute();
     $bem = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$bem) {

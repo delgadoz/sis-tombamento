@@ -40,11 +40,11 @@ $proximoTombamento = 1;
 try {
     $stmtT = $pdo->prepare(
         "SELECT numero_tombamento FROM bens_moveis
-         WHERE created_by = :usuario AND cnpj = :cnpj
+         WHERE created_by = :usuario_id AND cnpj = :cnpj
          ORDER BY CAST(numero_tombamento AS UNSIGNED) DESC
          LIMIT 1"
     );
-    $stmtT->bindParam(':usuario', $_SESSION['usuario'], PDO::PARAM_STR);
+    $stmtT->bindParam(':usuario_id', $_SESSION['usuario_id'], PDO::PARAM_INT);
 	$stmtT->bindParam(':cnpj', $_SESSION['cnpj'], PDO::PARAM_STR);
     $stmtT->execute();
     $ultimoT = $stmtT->fetchColumn();
