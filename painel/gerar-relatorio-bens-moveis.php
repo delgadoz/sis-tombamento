@@ -283,7 +283,6 @@ ob_start();
     </style>
 </head>
 <body>
-
     <?php if ($marcaDaguaBase64): ?>
         <div class="marca-dagua">
             <img src="<?= $marcaDaguaBase64 ?>" alt="">
@@ -383,16 +382,6 @@ $dompdf->loadHtml($html);
 $dompdf->render();
 
 // ===== GRAVA O PDF EM ARQUIVO TEMPORÁRIO E REDIRECIONA PARA ROTA GET =====
-//
-// Por que não usar $dompdf->stream() direto aqui?
-// stream() responde dentro da MESMA requisição POST que gerou o relatório.
-// O visualizador de PDF embutido do navegador funciona bem para EXIBIR esse
-// conteúdo, mas o botão "salvar/baixar" dele sempre refaz um GET para a
-// mesma URL. Como esta rota só aceita POST, esse GET seria redirecionado
-// (ou barrado), e o navegador acabaria salvando essa resposta de erro/
-// redirecionamento como se fosse o PDF — daí o arquivo sem extensão e a
-// falha ao abrir. Servindo o arquivo por uma rota GET dedicada, o "salvar"
-// do visualizador passa a funcionar normalmente.
 
 $diretorioTemp = __DIR__ . '/tmp_relatorios';
 if (!is_dir($diretorioTemp)) {

@@ -18,3 +18,4 @@ painel/backups
 painel/composer.lock
 painel/composer.json
 painel/commit.txt
+painel/tmp_relatorios/*.pdf
