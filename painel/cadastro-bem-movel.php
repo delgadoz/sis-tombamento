@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'conexao.php';
+require_once 'log.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: cadastrar-bem-movel');
@@ -106,7 +107,6 @@ if (!is_numeric($numero_tombamento) || (int)$numero_tombamento < 0) {
     exit;
 }
 
-// Formato do Grupo (deve ser um ID numérico; a existência é checada no banco mais abaixo)
 if (!ctype_digit($grupo_id)) {
     $_SESSION['erro'] = 'Grupo inválido.';
     header('Location: cadastrar-bem-movel');
@@ -120,7 +120,6 @@ if (!in_array($estado, $estados_permitidos, true)) {
     exit;
 }
 
-// Formato do Tipo (deve ser um ID numérico; a existência é checada no banco mais abaixo)
 if (!ctype_digit($tipo_id)) {
     $_SESSION['erro'] = 'Tipo inválido.';
     header('Location: cadastrar-bem-movel');
@@ -136,7 +135,6 @@ if ($tombamento_massa) {
         exit;
     }
 
-    // numero_tombamento deve ser numérico inteiro positivo para o modo em massa
     if (!ctype_digit((string) $numero_tombamento) || (int) $numero_tombamento < 1) {
         $_SESSION['erro'] = 'O Nº de Tombamento deve ser um número inteiro positivo para tombamento em massa.';
         header('Location: cadastrar-bem-movel');
@@ -414,6 +412,24 @@ try {
         $stmt->bindParam(':cnpj',              $cnpj,           PDO::PARAM_STR);
 		$stmt->bindParam(':setor_original',    $setor_origem,   PDO::PARAM_INT);
         $stmt->execute();
+
+        $bemIdInserido = (int) $pdo->lastInsertId();
+        registrarAuditoria($pdo, $created_by, 'cadastro', 'bens_moveis', $bemIdInserido, null, [
+            'numero_tombamento' => $tombAtual,
+            'descricao'         => $descricao,
+            'marca'             => $marca,
+            'numero_empenho'    => $numero_empenho,
+            'data_aquisicao'    => $data_aquisicao,
+            'numero_nota'       => $numero_nota,
+            'setor'             => $setor,
+            'subsetor'          => $subsetor,
+            'unidade'           => $unidade,
+            'grupo_id'          => $grupo_id,
+            'estado'            => $estado,
+            'tipo_id'           => $tipo_id,
+            'valor'             => $valor,
+            'setor_original'    => $setor_origem,
+        ]);
     }
 
     $pdo->commit();

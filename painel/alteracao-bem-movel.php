@@ -1,13 +1,14 @@
 <?php
 session_start();
-require_once 'conexao.php'; 
+require_once 'conexao.php';
+require_once 'log.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: alterar-bem-movel');
     exit;
 }
 
-if (!isset($_SESSION['usuario'])) {
+if (!isset($_SESSION['usuario']) || !isset($_SESSION['usuario_id'])) {
     header('Location: login');
     exit;
 }
@@ -53,7 +54,7 @@ if (empty($id_bem) || !ctype_digit($id_bem)) {
 // ===== VERIFICA SE O BEM EXISTE, PERTENCE AO CNPJ DO USUÁRIO E SE ESTÁ DENTRO DO PRAZO =====
 try {
     $stmtVerifica = $pdo->prepare(
-        "SELECT id, (created_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)) AS dentro_prazo
+        "SELECT *, (created_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)) AS dentro_prazo
          FROM bens_moveis
          WHERE id = :id AND cnpj = :cnpj
          LIMIT 1"
@@ -71,6 +72,10 @@ try {
 
     // Após 3 dias, apenas setor, subsetor, unidade e estado podem ser alterados
     $edicao_completa = (bool) $bem['dentro_prazo'];
+
+    // Snapshot "antes" para o log de auditoria (remove campo calculado que não existe na tabela)
+    $dadosAntes = $bem;
+    unset($dadosAntes['dentro_prazo']);
 } catch (PDOException $e) {
     $_SESSION['erro'] = 'Erro interno ao verificar o bem. Tente novamente.';
     header('Location: alterar-bem-movel');
@@ -246,9 +251,7 @@ try {
                     grupo_id        = :grupo_id,
                     estado          = :estado,
                     tipo_id         = :tipo_id,
-                    valor           = :valor,
-                    updated_by      = :updated_by,
-                    updated_at      = NOW()
+                    valor           = :valor
                 WHERE id = :id AND cnpj = :cnpj";
 
         $stmt = $pdo->prepare($sql);
@@ -266,7 +269,6 @@ try {
         $stmt->bindParam(':estado',         $estado,         PDO::PARAM_STR);
         $stmt->bindParam(':tipo_id',        $tipo_id,        PDO::PARAM_INT);
         $stmt->bindParam(':valor',          $valor,          PDO::PARAM_STR);
-        $stmt->bindParam(':updated_by',     $usuario_logado, PDO::PARAM_STR);
         $stmt->bindParam(':id',             $id_bem,         PDO::PARAM_INT);
         $stmt->bindParam(':cnpj',           $cnpj_logado,    PDO::PARAM_STR);
     } else {
@@ -274,9 +276,7 @@ try {
                     setor           = :setor,
                     subsetor        = :subsetor,
                     unidade         = :unidade,
-                    estado          = :estado,
-                    updated_by      = :updated_by,
-                    updated_at      = NOW()
+                    estado          = :estado
                 WHERE id = :id AND cnpj = :cnpj";
 
         $stmt = $pdo->prepare($sql);
@@ -285,12 +285,38 @@ try {
         $stmt->bindParam(':subsetor',       $subsetor,       PDO::PARAM_STR);
         $stmt->bindParam(':unidade',        $unidade,        PDO::PARAM_STR);
         $stmt->bindParam(':estado',         $estado,         PDO::PARAM_STR);
-        $stmt->bindParam(':updated_by',     $usuario_logado, PDO::PARAM_STR);
         $stmt->bindParam(':id',             $id_bem,         PDO::PARAM_INT);
         $stmt->bindParam(':cnpj',           $cnpj_logado,    PDO::PARAM_STR);
     }
 
     $stmt->execute();
+
+    if ($edicao_completa) {
+        $dadosDepois = [
+            'descricao'      => $descricao,
+            'marca'          => $marca,
+            'numero_empenho' => $numero_empenho,
+            'data_aquisicao' => $data_aquisicao,
+            'numero_nota'    => $numero_nota,
+            'setor'          => $setor,
+            'setor_original' => $setor_origem,
+            'subsetor'       => $subsetor,
+            'unidade'        => $unidade,
+            'grupo_id'       => $grupo_id,
+            'estado'         => $estado,
+            'tipo_id'        => $tipo_id,
+            'valor'          => $valor,
+        ];
+    } else {
+        $dadosDepois = [
+            'setor'    => $setor,
+            'subsetor' => $subsetor,
+            'unidade'  => $unidade,
+            'estado'   => $estado,
+        ];
+    }
+
+    registrarAuditoria($pdo, $_SESSION['usuario_id'], 'edicao', 'bens_moveis', (int) $id_bem, $dadosAntes, $dadosDepois);
 
     $_SESSION['sucesso'] = 'Bem móvel alterado com sucesso!';
     header('Location: alterar-bem-movel');

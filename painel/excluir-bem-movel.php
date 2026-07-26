@@ -1,13 +1,14 @@
 <?php
 session_start();
 require_once 'conexao.php';
+require_once 'log.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: alterar-bem-movel');
     exit;
 }
 
-if (!isset($_SESSION['usuario'])) {
+if (!isset($_SESSION['usuario']) || !isset($_SESSION['usuario_id'])) {
     header('Location: login');
     exit;
 }
@@ -36,7 +37,7 @@ if (empty($id_bem) || !ctype_digit($id_bem)) {
 // ===== VERIFICA SE O BEM EXISTE E PERTENCE AO CNPJ DO USUÁRIO =====
 try {
     $stmtVerifica = $pdo->prepare(
-        "SELECT id, numero_tombamento, imagens
+        "SELECT *
          FROM bens_moveis
          WHERE id = :id AND cnpj = :cnpj
 		 AND created_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)
@@ -73,6 +74,8 @@ try {
         header('Location: alterar-bem-movel');
         exit;
     }
+
+    registrarAuditoria($pdo, $_SESSION['usuario_id'], 'exclusao', 'bens_moveis', (int) $id_bem, $bem, null);
 } catch (PDOException $e) {
     $_SESSION['erro'] = 'Erro interno ao excluir o bem. Tente novamente.';
     header('Location: alterar-bem-movel');

@@ -2,6 +2,7 @@
 session_start();
 require_once 'conexao.php';
 require_once 'rate_limit.php';
+require_once 'log.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: login');
@@ -50,6 +51,7 @@ try {
     if (!$usuario || !password_verify($senha, $usuario['senha'])) {
         registrarTentativaFalha($pdo, $ip, 'ip');
         registrarTentativaFalha($pdo, $email, 'email');
+        registrarLoginFalho($pdo, $email, $ip);
         $_SESSION['erro'] = 'E-mail ou senha inválidos.';
         header('Location: login');
         exit;
