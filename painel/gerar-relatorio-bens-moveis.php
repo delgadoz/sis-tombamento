@@ -135,7 +135,7 @@ $ordenarPorEscolhido = $_POST['ordenar_por'] ?? 'tombamento';
 $colunaOrdenacao = $colunasOrdenacao[$ordenarPorEscolhido] ?? 'numero_tombamento';
 
 // ===== MONTAGEM E EXECUÇÃO DA QUERY =====
-$sql = "SELECT b.id, b.numero_tombamento, b.descricao, b.marca, so.descricao AS setor_original, b.setor, b.subsetor, b.unidade,
+$sql = "SELECT b.id, b.numero_tombamento, b.descricao, b.marca, b.numero_empenho, so.descricao AS setor_original, b.setor, b.subsetor, b.unidade,
                g.nome AS grupo, b.estado, t.tipo, b.valor, b.data_aquisicao
         FROM bens_moveis b
         INNER JOIN grupos g ON g.id = b.grupo_id
@@ -328,6 +328,7 @@ ob_start();
                     <th>Tombamento</th>
                     <th>Descrição</th>
                     <th>Marca</th>
+                    <th>Empenho</th>
                     <th>Setor Original</th>
                     <th>Setor</th>
                     <th>SubSetor</th>
@@ -345,6 +346,7 @@ ob_start();
                         <td><?= htmlspecialchars($bem['numero_tombamento']) ?></td>
                         <td><?= htmlspecialchars($bem['descricao']) ?></td>
                         <td><?= htmlspecialchars($bem['marca'] ?? '-') ?></td>
+                        <td><?= htmlspecialchars($bem['numero_empenho'] ?? '-') ?></td>
                         <td><?= htmlspecialchars($bem['setor_original'] ?? '-') ?></td>
                         <td><?= htmlspecialchars($bem['setor']) ?></td>
                         <td><?= htmlspecialchars($bem['subsetor']) ?></td>
@@ -359,7 +361,7 @@ ob_start();
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="11">Valor total</td>
+                    <td colspan="12">Valor total</td>
                     <td class="valor">R$ <?= number_format($valorTotal, 2, ',', '.') ?></td>
                 </tr>
             </tfoot>
