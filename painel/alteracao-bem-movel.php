@@ -316,7 +316,39 @@ try {
         ];
     }
 
-    registrarAuditoria($pdo, $_SESSION['usuario_id'], 'edicao', 'bens_moveis', (int) $id_bem, $dadosAntes, $dadosDepois);
+    // ===== SEPARA MOVIMENTO (setor/subsetor/unidade) DE EDIÇÃO (demais campos) =====
+    $campos_movimento = ['setor', 'subsetor', 'unidade'];
+
+    $houve_movimento = false;
+    foreach ($campos_movimento as $campo) {
+        if ((string) ($dadosAntes[$campo] ?? '') !== (string) ($dadosDepois[$campo] ?? '')) {
+            $houve_movimento = true;
+            break;
+        }
+    }
+
+    $houve_outra_alteracao = false;
+    foreach ($dadosDepois as $campo => $valorCampo) {
+        if (in_array($campo, $campos_movimento, true)) {
+            continue;
+        }
+        if ((string) ($dadosAntes[$campo] ?? '') !== (string) $valorCampo) {
+            $houve_outra_alteracao = true;
+            break;
+        }
+    }
+
+    // 'edicao' só é registrada se algo além de setor/subsetor/unidade mudou
+    if ($houve_outra_alteracao) {
+        registrarAuditoria($pdo, $_SESSION['usuario_id'], 'edicao', 'bens_moveis', (int) $id_bem, $dadosAntes, $dadosDepois);
+    }
+
+    // 'movimento' é registrada sempre que setor/subsetor/unidade mudou, com ou sem outras alterações
+    if ($houve_movimento) {
+        $movimentoAntes = array_intersect_key($dadosAntes, array_flip($campos_movimento));
+        $movimentoDepois = array_intersect_key($dadosDepois, array_flip($campos_movimento));
+        registrarAuditoria($pdo, $_SESSION['usuario_id'], 'movimento', 'bens_moveis', (int) $id_bem, $movimentoAntes, $movimentoDepois);
+    }
 
     $_SESSION['sucesso'] = 'Bem móvel alterado com sucesso!';
     header('Location: alterar-bem-movel');
