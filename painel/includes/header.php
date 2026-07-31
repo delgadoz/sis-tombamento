@@ -39,6 +39,7 @@ if (!isset($_SESSION['usuario'])) {
 				<a href="#">Relatórios</a>
 				<ul class="submenu">
 					<li><a href="relatorio-bens-moveis">Bens Móveis</a></li>
+					<li><a href="relatorio-movimentos">Movimentações</a></li>
 				</ul>
 			</li> |
 			<li><a href="configuracoes">Configurações</a></li> |

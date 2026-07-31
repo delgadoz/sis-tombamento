@@ -431,7 +431,6 @@ footer .divider {
             <div class="orgao">Controle Patrimonial</div>
         </div>
     </div>
-    <div class="header-badge">Sistema de Patrimônio</div>
 </header>
 
 <!-- ══ CONTEÚDO PRINCIPAL ══ -->
@@ -540,7 +539,7 @@ footer .divider {
     <p>
         Sistema de Controle Patrimonial
         <span class="divider">|</span>
-        Desenvolvido por <strong><a href="https://github.com/delgadoz" style="color:#fff;" target="_blank">Rodrigo Delgado</a></strong> &copy; <?= date('Y') ?> Todos os direitos reservados
+        <strong><a href="https://caraubas.pb.gov.br" style="color:#fff;" target="_blank">Prefeitura Municipal de Caraúbas</a></strong> &copy; <?= date('Y') ?> Todos os direitos reservados
     </p>
 </footer>
 
