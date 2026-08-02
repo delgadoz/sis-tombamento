@@ -103,6 +103,18 @@ function formatarCampo(?string $valor): string
     return htmlspecialchars(($valor === null || $valor === '') ? '-' : $valor);
 }
 
+// ===== Função que destaca de verde os campos alterados =====
+function formatarCampoDestino(?string $valorOrigem, ?string $valorDestino): array
+{
+    $origemNormalizada  = ($valorOrigem  === null || $valorOrigem  === '') ? null : $valorOrigem;
+    $destinoNormalizado = ($valorDestino === null || $valorDestino === '') ? null : $valorDestino;
+
+    return [
+        'texto'    => formatarCampo($valorDestino),
+        'alterado' => $origemNormalizada !== $destinoNormalizado,
+    ];
+}
+
 // ===== MONTAGEM DO HTML DO RELATÓRIO =====
 $dataEmissao = date('d/m/Y H:i');
 $totalRegistros = count($movimentos);
@@ -220,6 +232,18 @@ ob_start();
             width: 100%;
             display: block;
         }
+		
+		.celula-nao-alterada {
+			color: #333;
+			background: #FF0000,
+			font-weight: bold;
+		}
+		
+		.celula-alterada {
+			color: #333;
+			background: #7FFF00; 
+			font-weight: bold;
+		}
     </style>
 </head>
 <body>
@@ -289,9 +313,14 @@ ob_start();
                         <td><?= formatarCampo($mov['setor_origem']) ?></td>
                         <td><?= formatarCampo($mov['subsetor_origem']) ?></td>
                         <td><?= formatarCampo($mov['unidade_origem']) ?></td>
-                        <td><?= formatarCampo($mov['setor_destino']) ?></td>
-                        <td><?= formatarCampo($mov['subsetor_destino']) ?></td>
-                        <td><?= formatarCampo($mov['unidade_destino']) ?></td>
+						<?php $setor = formatarCampoDestino($mov['setor_origem'], $mov['setor_destino']); ?>
+						<td class="<?= $setor['alterado'] ? 'celula-alterada' : 'celula-nao-alterada' ?>"><?= $setor['texto'] ?></td>
+
+						<?php $subsetor = formatarCampoDestino($mov['subsetor_origem'], $mov['subsetor_destino']); ?>
+						<td class="<?= $subsetor['alterado'] ? 'celula-alterada' : 'celula-nao-alterada' ?>"><?= $subsetor['texto'] ?></td>
+
+						<?php $unidade = formatarCampoDestino($mov['unidade_origem'], $mov['unidade_destino']); ?>
+						<td class="<?= $unidade['alterado'] ? 'celula-alterada' : 'celula-nao-alterada' ?>"><?= $unidade['texto'] ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
