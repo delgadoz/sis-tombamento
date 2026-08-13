@@ -38,7 +38,7 @@ Projeto construído do zero (backend, frontend e modelagem de banco) para substi
 
 ---
 
-## 🏗️ Arquitetura
+## 🏗️ Arquitetura (simplificada)
 
 ```
 sis-tombamento/
