@@ -27,13 +27,13 @@ Projeto construído do zero (backend, frontend e modelagem de banco) para substi
 ## ✨ Funcionalidades
 
 - **Cadastro de bens móveis** com numeração de tombamento sequencial automática, cadastro individual ou em massa (com reaproveitamento de dados entre itens) e upload de imagens.
-- **Multi-tenant por órgão (CNPJ)** — o mesmo sistema atende múltiplas secretarias (ex: Prefeitura, Secretaria de Saúde) mantendo os dados de cada uma isolados logicamente.
+- **Multi-tenant por órgão (CNPJ)** — o mesmo sistema atende múltiplos CNPJs (ex: Prefeitura, Secretaria de Saúde) mantendo os dados de cada uma isolados logicamente.
 - **Consulta pública por tombamento** — página pública (pensada para acesso via etiqueta/QR code no bem) exibindo os dados do item, com navegação entre bens anterior/próximo.
 - **Movimentação de bens entre setores/subsetores/unidades**, com distinção entre "setor de origem" (da nota de aquisição) e "setor atual", incluindo janela de correção de 3 dias após o cadastro.
 - **Trilha de auditoria (audit log)** de todas as ações sensíveis — quem cadastrou, editou, excluiu ou movimentou um bem, com snapshot dos dados antes/depois em JSON.
 - **Relatórios em PDF** (via Dompdf, A4 paisagem) com marca d'água, filtros por período/grupo/unidade/setor/subsetor, e relatório dedicado de movimentações com destaque visual (verde) para os campos alterados.
 - **Autenticação segura**: sessão + hash de senha com `password_hash`/`bcrypt`, tokens CSRF em todos os formulários, e **rate limiting progressivo** de tentativas de login (por IP e por e-mail, com bloqueio escalonado de 30s a 15min) e log de tentativas falhas.
-- **Taxonomia normalizada**: grupos e tipos foram migrados de texto fixo no código para tabelas próprias (`grupos`, `tipos`) referenciadas por chave estrangeira, eliminando duplicação e preparando o terreno para gestão via painel (hoje o cadastro dessas tabelas ainda é feito diretamente no banco). Setores, subsetores e unidades já contam com página de cadastro pelo próprio usuário.
+- **Taxonomia normalizada**: grupos e tipos foram migrados de texto fixo no código para tabelas próprias (`grupos`, `tipos`) referenciadas por chave estrangeira, eliminando duplicação e preparando o terreno para gestão via painel (hoje o cadastro dessas tabelas ainda é feito diretamente no banco). Setores, subsetores e unidades já contam com página de cadastro que podem ser utilizadas pelo próprio usuário.
 - **Área de configurações** para troca de senha do usuário autenticado.
 
 ---
@@ -135,6 +135,7 @@ Acesse `http://localhost:8000` para a landing page pública e `http://localhost:
 - [ ] Módulos com controle de acesso para cadastro, alteração e exclusão de usuários
 - [ ] Módulo para exclusão de Setor, Subsetor e Unidade
 - [ ] Migrar as colunas setor, subsetor e unidade de colunas de texto para chaves estrangeiras (mesmo padrão já aplicado a grupo_id/tipo_id), refatorando os pontos do código que hoje dependem desses campos como texto livre
+- [ ] Adicionar seleção de CNPJ (organização/secretaria) nas Configurações, permitindo ao usuário alternar o contexto de operação sem precisar alterar diretamente no banco de dados
 
 ---
 
