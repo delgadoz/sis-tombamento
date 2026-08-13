@@ -1,10 +1,17 @@
 <?php
 date_default_timezone_set('America/Sao_Paulo');
 
-$host = 'localhost';
-$db   = 'patrimonio';
-$user = 'root';
-$pass = '';
+require_once __DIR__ . '/vendor/autoload.php';
+
+// Carrega as variáveis de ambiente do .env na raiz do projeto (um nível acima de /painel)
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
+$dotenv->load();
+$dotenv->required(['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS']);
+
+$host = $_ENV['DB_HOST'];
+$db   = $_ENV['DB_NAME'];
+$user = $_ENV['DB_USER'];
+$pass = $_ENV['DB_PASS'];
 
 try {
     $pdo = new PDO(
