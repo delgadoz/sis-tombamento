@@ -32,7 +32,7 @@ Projeto construído do zero (backend, frontend e modelagem de banco) para substi
 - **Movimentação de bens entre setores/subsetores/unidades**, com distinção entre "setor de origem" (da nota de aquisição) e "setor atual", incluindo janela de correção de 3 dias após o cadastro.
 - **Trilha de auditoria (audit log)** de todas as ações sensíveis — quem cadastrou, editou, excluiu ou movimentou um bem, com snapshot dos dados antes/depois em JSON.
 - **Relatórios em PDF** (via Dompdf, A4 paisagem) com marca d'água, filtros por período/grupo/unidade/setor/subsetor, e relatório dedicado de movimentações com destaque visual (verde) para os campos alterados.
-- **Autenticação segura**: sessão + hash de senha com `password_hash`/`bcrypt`, tokens CSRF em todos os formulários, e **rate limiting progressivo** de tentativas de login (por IP e por e-mail, com bloqueio escalonado de 30s a 15min) e log de tentativas falhas.
+- **Autenticação segura**: sessão + hash de senha com `password_hash`/`bcrypt`, tokens CSRF em todos os formulários, e **rate limiting progressivo** de tentativas de login (por IP e por e-mail, com bloqueio escalonado de 30s a 15min) e log de tentativas de login falhas.
 - **Taxonomia normalizada**: grupos e tipos foram migrados de texto fixo no código para tabelas próprias (`grupos`, `tipos`) referenciadas por chave estrangeira, eliminando duplicação e preparando o terreno para gestão via painel (hoje o cadastro dessas tabelas ainda é feito diretamente no banco). Setores, subsetores e unidades já contam com página de cadastro que podem ser utilizadas pelo próprio usuário.
 - **Área de configurações** para troca de senha do usuário autenticado.
 
@@ -94,37 +94,86 @@ Pontos implementados com atenção especial, pensando em um sistema real de uso 
 - Senhas nunca armazenadas em texto puro (`password_hash`/`password_verify`).
 - **Proteção CSRF** em todos os formulários de escrita.
 - **Rate limiting** de login por IP e por e-mail, com bloqueio progressivo (3 tentativas livres → bloqueios de 30s até 15min).
-- **Log de auditoria** imutável por aplicação (dados antes/depois em JSON) para qualquer ação sensível — essencial em um sistema de patrimônio público, onde rastreabilidade é requisito, não luxo.
+- **Log de auditoria** imutável por aplicação (dados antes/depois em JSON) para qualquer ação sensível — essencial em um sistema de patrimônio público, onde rastreabilidade é requisito.
 - Saída sempre escapada com `htmlspecialchars` para prevenir XSS.
-- **Credenciais de banco via variáveis de ambiente** (`.env`, com `vlucas/phpdotenv`) — nada de host/usuário/senha hardcoded em `conexao.php`.
+- **Credenciais de banco via variáveis de ambiente** (`.env`, com `vlucas/phpdotenv`).
 
-> ⚠️ **Importante:** o `database/db.sql` cria um usuário administrativo padrão (`admin` / `admin`) só para facilitar o setup local de quem for clonar o projeto. **Troque essa senha imediatamente após a primeira execução** (pela própria tela de Configurações do sistema) — nunca use essa credencial em um ambiente exposto publicamente.
+> ⚠️ **Importante:** o `database/db.sql` cria um usuário administrativo padrão (`admin@gmail.com` / `admin1234`) só para facilitar o setup local de quem for clonar o projeto. **Troque essa senha imediatamente após a primeira execução** (pela própria tela de Configurações do sistema) — nunca use essa credencial em um ambiente exposto publicamente.
 
 ---
 
 ## 🚀 Rodando localmente
 
+Este projeto foi desenvolvido e testado com **XAMPP** (Apache + PHP + MySQL/MariaDB), então o tutorial abaixo assume esse ambiente.
+
+### Pré-requisitos
+
+- [XAMPP](https://www.apachefriends.org/) instalado, com **Apache** e **MySQL** — os dois módulos ligados pelo painel de controle do XAMPP.
+- [Composer](https://getcomposer.org/) instalado e disponível no PATH do sistema.
+- Git.
+
+### Passo a passo
+
+**1. Clone o repositório dentro da pasta `htdocs` do XAMPP**
+
 ```bash
-# 1. Clone o repositório
+cd C:\xampp\htdocs
 git clone https://github.com/delgadoz/sis-tombamento.git
 cd sis-tombamento
-
-# 2. Instale as dependências PHP
-cd painel && composer install && cd ..
-
-# 3. Crie o banco de dados e importe o schema
-mysql -u root -p -e "CREATE DATABASE patrimonio"
-mysql -u root -p patrimonio < database/db.sql
-
-# 4. Configure as variáveis de ambiente
-cp .env.example .env
-# edite o .env com o host/usuário/senha do seu MySQL local
-
-# 5. Suba com XAMPP ou PHP embutido
-php -S localhost:8000
 ```
 
-Acesse `http://localhost:8000` para a landing page pública e `http://localhost:8000/painel/login` para a área administrativa — o `database/db.sql` já cria um usuário inicial (`admin` / `admin`) para o primeiro acesso. **Troque essa senha assim que entrar** (menu Configurações).
+> No Linux, o caminho equivalente costuma ser `/opt/lampp/htdocs` (XAMPP) ou `/var/www/html` (LAMP nativo).
+
+**2. Instale as dependências PHP**
+
+```bash
+cd painel
+composer install
+cd ..
+```
+
+**3. Crie o banco de dados e importe o schema**
+
+Abra o **phpMyAdmin** (`http://localhost/phpmyadmin`, com o Apache e o MySQL do XAMPP ligados), crie um banco chamado `patrimonio` e importe o arquivo `database/db.sql` pela aba "Importar".
+
+Se preferir via terminal, com o MySQL do XAMPP no PATH:
+
+```bash
+mysql -u root -p -e "CREATE DATABASE patrimonio"
+mysql -u root -p patrimonio < database/db.sql
+```
+
+> No XAMPP padrão, o usuário `root` do MySQL não tem senha — pressione Enter em branco quando for solicitado.
+
+**4. Configure as variáveis de ambiente**
+
+```bash
+# Windows (CMD)
+copy .env.example .env
+
+# Linux / macOS
+cp .env.example .env
+```
+
+Edite o `.env` criado com os dados do seu MySQL local:
+
+```
+DB_HOST=localhost
+DB_NAME=patrimonio
+DB_USER=root
+DB_PASS=
+```
+
+**5. Ligue o Apache pelo painel do XAMPP**
+
+Com Apache e MySQL ligados no painel de controle do XAMPP, acesse:
+
+- `http://localhost/sis-tombamento` — landing page pública
+- `http://localhost/sis-tombamento/painel/login` — área administrativa
+
+O `.htaccess` do projeto (que remove o `.php` das URLs) é lido automaticamente pelo Apache — não é necessária nenhuma configuração adicional.
+
+O `database/db.sql` já cria um usuário inicial (`admin@gmail.com` / `admin1234`) para o primeiro acesso. **Troque essa senha assim que entrar** (menu Configurações).
 
 ---
 
