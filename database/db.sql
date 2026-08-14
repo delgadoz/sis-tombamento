@@ -178,6 +178,14 @@ CREATE TABLE `usuarios` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
+-- Usuário administrador padrão para o primeiro acesso
+-- Login: admin  |  Senha: admin
+-- IMPORTANTE: troque essa senha assim que acessar o sistema (menu Configurações)
+--
+INSERT INTO `usuarios` (`usuario`, `nome`, `email`, `senha`, `cnpj`) VALUES
+('admin', 'Administrador', 'admin@sistombamento.com', '$2a$12$ZwhcrQp6xxudgekLEJUxc.Ksdpds.5LuHwuWyHuBu2lUdQHbTKBk6', 'prefeitura');
+
+--
 -- Índices para tabelas despejadas
 --
 
