@@ -183,7 +183,7 @@ CREATE TABLE `usuarios` (
 -- IMPORTANTE: troque essa senha assim que acessar o sistema (menu Configurações)
 --
 INSERT INTO `usuarios` (`usuario`, `nome`, `email`, `senha`, `cnpj`) VALUES
-('admin', 'Administrador', 'admin@sistombamento.com', '$2a$12$ZwhcrQp6xxudgekLEJUxc.Ksdpds.5LuHwuWyHuBu2lUdQHbTKBk6', 'prefeitura');
+('admin', 'Administrador', 'admin@sistombamento.com', '$2a$12$azu/kHAck12H723i98XyvecQyoBd8x3t731Bdv0wZ0Fh.nsxt7Kq.', 'prefeitura');
 
 --
 -- Índices para tabelas despejadas
