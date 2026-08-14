@@ -106,7 +106,7 @@ Pontos implementados com atenção especial, pensando em um sistema real de uso 
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/seu-usuario/sis-tombamento.git
+git clone https://github.com/delgadoz/sis-tombamento.git
 cd sis-tombamento
 
 # 2. Instale as dependências PHP
