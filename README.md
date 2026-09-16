@@ -98,7 +98,7 @@ Pontos implementados com atenção especial, pensando em um sistema real de uso 
 - Saída sempre escapada com `htmlspecialchars` para prevenir XSS.
 - **Credenciais de banco via variáveis de ambiente** (`.env`, com `vlucas/phpdotenv`).
 
-> ⚠️ **Importante:** o `database/db.sql` cria um usuário administrativo padrão (`admin@gmail.com` / `admin1234`) só para facilitar o setup local de quem for clonar o projeto. **Troque essa senha imediatamente após a primeira execução** (pela própria tela de Configurações do sistema) — nunca use essa credencial em um ambiente exposto publicamente.
+> ⚠️ **Importante:** o `database/db.sql` cria um usuário administrativo padrão (`admin@sistombamento.com` / `admin1234`) só para facilitar o setup local de quem for clonar o projeto. **Troque essa senha imediatamente após a primeira execução** (pela própria tela de Configurações do sistema) — nunca use essa credencial em um ambiente exposto publicamente.
 
 ---
 
@@ -171,9 +171,7 @@ Com Apache e MySQL ligados no painel de controle do XAMPP, acesse:
 - `http://localhost/sis-tombamento` — landing page pública
 - `http://localhost/sis-tombamento/painel/login` — área administrativa
 
-O `.htaccess` do projeto (que remove o `.php` das URLs) é lido automaticamente pelo Apache — não é necessária nenhuma configuração adicional.
-
-O `database/db.sql` já cria um usuário inicial (`admin@gmail.com` / `admin1234`) para o primeiro acesso. **Troque essa senha assim que entrar** (menu Configurações).
+O `database/db.sql` já cria um usuário inicial (`admin@sistombamento.com` / `admin1234`) para o primeiro acesso. **Troque essa senha assim que entrar** (menu Configurações).
 
 ---
 
