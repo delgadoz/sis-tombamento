@@ -25,7 +25,7 @@ unset($_SESSION['csrf_token']);
 
 // ===== IDENTIFICA QUAL AÇÃO FOI SOLICITADA (WHITELIST) =====
 $acao = $_POST['acao'] ?? '';
-$acoes_permitidas = ['alterar_senha'];
+$acoes_permitidas = ['alterar_senha', 'alterar_cnpj'];
 
 if (!in_array($acao, $acoes_permitidas, true)) {
     $_SESSION['erro'] = 'Ação inválida.';
@@ -37,7 +37,7 @@ $usuario = $_SESSION['usuario'];
 
 // ===== BUSCA OS DADOS ATUAIS DO USUÁRIO NO BANCO =====
 try {
-    $stmtU = $pdo->prepare("SELECT id, senha FROM usuarios WHERE usuario = :u LIMIT 1");
+    $stmtU = $pdo->prepare("SELECT id, senha, cnpj FROM usuarios WHERE usuario = :u LIMIT 1");
     $stmtU->bindParam(':u', $usuario, PDO::PARAM_STR);
     $stmtU->execute();
     $dadosUsuario = $stmtU->fetch(PDO::FETCH_ASSOC);
@@ -132,6 +132,47 @@ if ($acao === 'alterar_senha') {
         session_start();
         $_SESSION['sucesso'] = 'Senha atualizada com sucesso! Faça login novamente.';
         header('Location: login');
+        exit;
+
+    } catch (PDOException $e) {
+        $_SESSION['erro'] = 'Erro interno. Tente novamente.';
+        header('Location: configuracoes');
+        exit;
+    }
+}
+
+// ===== AÇÃO: ALTERAR CNPJ =====
+
+if ($acao === 'alterar_cnpj') {
+
+    $novo_cnpj        = $_POST['novo_cnpj'] ?? '';
+    $cnpjs_permitidos = ['prefeitura', 'saude'];
+
+    // Whitelist rígida — nunca confiar no valor enviado pelo formulário
+    if (!in_array($novo_cnpj, $cnpjs_permitidos, true)) {
+        $_SESSION['erro'] = 'CNPJ inválido.';
+        header('Location: configuracoes');
+        exit;
+    }
+
+    // Nada a fazer se o valor selecionado já é o atual
+    if ($novo_cnpj === $dadosUsuario['cnpj']) {
+        $_SESSION['sucesso'] = 'Nenhuma alteração de CNPJ foi necessária.';
+        header('Location: configuracoes');
+        exit;
+    }
+
+    try {
+        $stmtUpCnpj = $pdo->prepare("UPDATE usuarios SET cnpj = :c WHERE id = :id");
+        $stmtUpCnpj->bindParam(':c',  $novo_cnpj,          PDO::PARAM_STR);
+        $stmtUpCnpj->bindParam(':id', $dadosUsuario['id'], PDO::PARAM_INT);
+        $stmtUpCnpj->execute();
+
+        // Atualiza a sessão imediatamente, sem exigir novo login
+        $_SESSION['cnpj'] = $novo_cnpj;
+
+        $_SESSION['sucesso'] = 'CNPJ atualizado com sucesso!';
+        header('Location: configuracoes');
         exit;
 
     } catch (PDOException $e) {
