@@ -172,16 +172,6 @@ ob_start();
             margin-top: 8px;
         }
 
-        footer {
-            position: fixed;
-            bottom: -40px;
-            left: 0;
-            right: 0;
-            font-size: 8px;
-            color: #777;
-            text-align: center;
-        }
-
         .info-relatorio {
             margin-bottom: 12px;
             font-size: 9px;
@@ -262,23 +252,6 @@ ob_start();
         <hr>
     </header>
 
-    <footer>
-        <script type="text/php">
-            if (isset($pdf)) {
-                $texto = "Emitido em <?= addslashes($dataEmissao) ?> — Página {PAGE_NUM} de {PAGE_COUNT}";
-                $font  = $fontMetrics->getFont("Helvetica", "normal");
-                $tamanhoFonte = 8;
-
-                $larguraTexto  = $fontMetrics->getTextWidth($texto, $font, $tamanhoFonte);
-                $larguraPagina = $pdf->get_width();
-                $x = ($larguraPagina - $larguraTexto) / 2; // centralizado
-                $y = $pdf->get_height() - 25;              // 25pt acima da borda inferior
-
-                $pdf->page_text($x, $y, $texto, $font, $tamanhoFonte, array(0.47, 0.47, 0.47));
-            }
-        </script>
-    </footer>
-
     <div class="info-relatorio">
         Total de registros: <?= $totalRegistros ?>
     </div>
@@ -326,7 +299,20 @@ ob_start();
             </tbody>
         </table>
     <?php endif; ?>
+    <script type="text/php">
+        if (isset($pdf)) {
+            $texto = "Emitido em <?= addslashes($dataEmissao) ?> — Página {PAGE_NUM} de {PAGE_COUNT}";
+                $font  = $fontMetrics->getFont("Helvetica", "normal");
+                $tamanhoFonte = 8;
 
+                $larguraTexto  = $fontMetrics->getTextWidth($texto, $font, $tamanhoFonte);
+                $larguraPagina = $pdf->get_width();
+                $x = ($larguraPagina - $larguraTexto) / 2; // centralizado
+                $y = $pdf->get_height() - 25;              // 25pt acima da borda inferior
+
+                $pdf->page_text($x, $y, $texto, $font, $tamanhoFonte, array(0.47, 0.47, 0.47));
+            }
+    </script>
 </body>
 </html>
 <?php
