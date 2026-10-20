@@ -27,14 +27,14 @@ Projeto construído do zero (backend, frontend e modelagem de banco) para substi
 ## ✨ Funcionalidades
 
 - **Cadastro de bens móveis** com numeração de tombamento sequencial automática, cadastro individual ou em massa (com reaproveitamento de dados entre itens) e upload de imagens.
-- **Multi-tenant por órgão (CNPJ)** — o mesmo sistema atende múltiplos CNPJs (ex: Prefeitura, Secretaria de Saúde) mantendo os dados de cada uma isolados logicamente.
+- **Multi-tenant por órgão (CNPJ)** — o mesmo sistema atende múltiplos CNPJs (ex: Prefeitura, Secretaria de Saúde) mantendo os dados de cada uma isolados logicamente. O usuário pode alternar o órgão de operação pela tela de Configurações.
 - **Consulta pública por tombamento** — página pública (pensada para acesso via etiqueta/QR code no bem) exibindo os dados do item, com navegação entre bens anterior/próximo.
 - **Movimentação de bens entre setores/subsetores/unidades**, com distinção entre "setor de origem" (da nota de aquisição) e "setor atual", incluindo janela de correção de 3 dias após o cadastro.
 - **Trilha de auditoria (audit log)** de todas as ações sensíveis — quem cadastrou, editou, excluiu ou movimentou um bem, com snapshot dos dados antes/depois em JSON.
 - **Relatórios em PDF** (via Dompdf, A4 paisagem) com marca d'água, filtros por período/grupo/unidade/setor/subsetor, e relatório dedicado de movimentações com destaque visual (verde) para os campos alterados.
 - **Autenticação segura**: sessão + hash de senha com `password_hash`/`bcrypt`, tokens CSRF em todos os formulários, e **rate limiting progressivo** de tentativas de login (por IP e por e-mail, com bloqueio escalonado de 30s a 15min) e log de tentativas de login falhas.
 - **Taxonomia normalizada**: grupos e tipos foram migrados de texto fixo no código para tabelas próprias (`grupos`, `tipos`) referenciadas por chave estrangeira, eliminando duplicação e preparando o terreno para gestão via painel (hoje o cadastro dessas tabelas ainda é feito diretamente no banco). Setores, subsetores e unidades já contam com página de cadastro que podem ser utilizadas pelo próprio usuário.
-- **Área de configurações** para troca de senha do usuário autenticado.
+- **Área de configurações em abas** — troca de senha (com confirmação da senha atual, indicador de força e encerramento da sessão após a troca) e **troca do CNPJ de operação** (Prefeitura/Saúde), que passa a valer imediatamente, sem precisar fazer login novamente.
 
 ---
 
@@ -96,6 +96,7 @@ Pontos implementados com atenção especial, pensando em um sistema real de uso 
 - **Rate limiting** de login por IP e por e-mail, com bloqueio progressivo (3 tentativas livres → bloqueios de 30s até 15min).
 - **Log de auditoria** imutável por aplicação (dados antes/depois em JSON) para qualquer ação sensível — essencial em um sistema de patrimônio público, onde rastreabilidade é requisito.
 - Saída sempre escapada com `htmlspecialchars` para prevenir XSS.
+- Alterações nas Configurações exigem **confirmação da senha atual**, e o CNPJ escolhido é validado por **whitelist no backend** (o valor enviado pelo formulário nunca é confiado).
 - **Credenciais de banco via variáveis de ambiente** (`.env`, com `vlucas/phpdotenv`).
 
 > ⚠️ **Importante:** o `database/db.sql` cria um usuário administrativo padrão (`admin@sistombamento.com` / `admin1234`) só para facilitar o setup local de quem for clonar o projeto. **Troque essa senha imediatamente após a primeira execução** (pela própria tela de Configurações do sistema) — nunca use essa credencial em um ambiente exposto publicamente.
@@ -182,7 +183,6 @@ O `database/db.sql` já cria um usuário inicial (`admin@sistombamento.com` / `a
 - [ ] Módulos com controle de acesso para cadastro, alteração e exclusão de usuários
 - [ ] Módulo para exclusão de Setor, Subsetor e Unidade
 - [ ] Migrar as colunas setor, subsetor e unidade de colunas de texto para chaves estrangeiras (mesmo padrão já aplicado a grupo_id/tipo_id), refatorando os pontos do código que hoje dependem desses campos como texto livre
-- [ ] Adicionar seleção de CNPJ (organização/secretaria) nas Configurações, permitindo ao usuário alternar o contexto de operação sem precisar alterar diretamente no banco de dados
 
 ---
 
