@@ -2,6 +2,26 @@
 session_start();
 require_once 'conexao.php';
 require_once 'log.php';
+require_once 'includes/form-flash.php';
+
+// Campos do formulário que podem ser devolvidos ao usuário em caso de erro.
+// id_bem e numero_tombamento são usados para refazer a busca e conferir se os
+// dados guardados pertencem ao mesmo bem antes de restaurá-los.
+const CAMPOS_FORM_ALTERACAO = [
+    'id_bem', 'numero_tombamento',
+    'descricao', 'marca', 'numero_empenho', 'data_aquisicao', 'numero_nota',
+    'setor_origem', 'setor', 'subsetor', 'unidade', 'grupo_id',
+    'estado', 'tipo_id', 'valor',
+];
+
+/**
+ * Volta para o formulário de alteração com a mensagem de erro, preservando
+ * os dados digitados. Encerra a execução.
+ */
+function voltarParaAlteracao(string $mensagem): void
+{
+    voltarComErro($mensagem, 'alterar-bem-movel', 'alteracao_bem', CAMPOS_FORM_ALTERACAO);
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: alterar-bem-movel');
@@ -13,10 +33,11 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['usuario_id'])) {
     exit;
 }
 
-$token_recebido = $_POST['csrf_token']    ?? '';
+$token_recebido = campoPost('csrf_token');
 $token_sessao   = $_SESSION['csrf_token'] ?? '';
 
-if (empty($token_recebido) || !hash_equals($token_sessao, $token_recebido)) {
+if (empty($token_recebido) || !is_string($token_sessao) || !hash_equals($token_sessao, $token_recebido)) {
+    // Sem preservar os dados: a requisição pode ter sido forjada por outro site.
     $_SESSION['erro'] = 'Requisição inválida. Tente novamente.';
     header('Location: alterar-bem-movel');
     exit;
@@ -25,30 +46,27 @@ if (empty($token_recebido) || !hash_equals($token_sessao, $token_recebido)) {
 unset($_SESSION['csrf_token']);
 
 // ===== COLETA E SANITIZAÇÃO DOS CAMPOS =====
-$id_bem          = trim($_POST['id_bem']          ?? '');
-$numero_tomb     = trim($_POST['numero_tombamento'] ?? '');
-$descricao       = trim($_POST['descricao']        ?? '');
-$marca           = trim($_POST['marca']            ?? '');
-$numero_empenho  = trim($_POST['numero_empenho']   ?? '');
-$data_aquisicao  = trim($_POST['data_aquisicao']   ?? '');
-$numero_nota     = trim($_POST['numero_nota']      ?? '');
-$setor_origem    = trim($_POST['setor_origem']     ?? '');
-$setor           = trim($_POST['setor']            ?? '');
-$subsetor        = trim($_POST['subsetor']         ?? '');
-$unidade         = trim($_POST['unidade']          ?? '');
-$grupo_id        = trim($_POST['grupo_id']         ?? '');
-$estado          = trim($_POST['estado']           ?? '');
-$tipo_id         = trim($_POST['tipo_id']           ?? '');
-$valor_raw       = trim($_POST['valor']            ?? '');
+$id_bem          = campoPost('id_bem');
+$descricao       = campoPost('descricao');
+$marca           = campoPost('marca');
+$numero_empenho  = campoPost('numero_empenho');
+$data_aquisicao  = campoPost('data_aquisicao');
+$numero_nota     = campoPost('numero_nota');
+$setor_origem    = campoPost('setor_origem');
+$setor           = campoPost('setor');
+$subsetor        = campoPost('subsetor');
+$unidade         = campoPost('unidade');
+$grupo_id        = campoPost('grupo_id');
+$estado          = campoPost('estado');
+$tipo_id         = campoPost('tipo_id');
+$valor_raw       = campoPost('valor');
 
-$usuario_logado  = $_SESSION['usuario'];
+$usuario_id      = $_SESSION['usuario_id'];
 $cnpj_logado     = $_SESSION['cnpj'];
 
 // ===== VALIDAÇÃO: ID DO BEM =====
-if (empty($id_bem) || !ctype_digit($id_bem)) {
-    $_SESSION['erro'] = 'Bem inválido. Realize a busca novamente.';
-    header('Location: alterar-bem-movel');
-    exit;
+if ($id_bem === '' || !ctype_digit($id_bem)) {
+    voltarParaAlteracao('Bem inválido. Realize a busca novamente.');
 }
 
 // ===== VERIFICA SE O BEM EXISTE, PERTENCE AO USUÁRIO/CNPJ E SE ESTÁ DENTRO DO PRAZO =====
@@ -62,129 +80,97 @@ try {
          WHERE id = :id AND cnpj = :cnpj AND created_by = :usuario_id
          LIMIT 1"
     );
-    $stmtVerifica->bindParam(':id',         $id_bem,                 PDO::PARAM_INT);
-    $stmtVerifica->bindParam(':cnpj',       $cnpj_logado,            PDO::PARAM_STR);
-    $stmtVerifica->bindParam(':usuario_id', $_SESSION['usuario_id'], PDO::PARAM_INT);
+    $stmtVerifica->bindParam(':id',         $id_bem,      PDO::PARAM_INT);
+    $stmtVerifica->bindParam(':cnpj',       $cnpj_logado, PDO::PARAM_STR);
+    $stmtVerifica->bindParam(':usuario_id', $usuario_id,  PDO::PARAM_INT);
     $stmtVerifica->execute();
     $bem = $stmtVerifica->fetch(PDO::FETCH_ASSOC);
-
-    if (!$bem) {
-        $_SESSION['erro'] = 'Bem não encontrado ou sem permissão para alterar.';
-        header('Location: alterar-bem-movel');
-        exit;
-    }
-
-    // Após 3 dias, apenas setor, subsetor, unidade e estado podem ser alterados
-    $edicao_completa = (bool) $bem['dentro_prazo'];
-
-    // Snapshot "antes" para o log de auditoria (remove campo calculado que não existe na tabela)
-    $dadosAntes = $bem;
-    unset($dadosAntes['dentro_prazo']);
 } catch (PDOException $e) {
-    $_SESSION['erro'] = 'Erro interno ao verificar o bem. Tente novamente.';
-    header('Location: alterar-bem-movel');
-    exit;
+    voltarParaAlteracao('Erro interno ao verificar o bem. Tente novamente.');
 }
+
+if (!$bem) {
+    voltarParaAlteracao('Bem não encontrado ou sem permissão para alterar.');
+}
+
+// Após 3 dias, apenas setor, subsetor, unidade e estado podem ser alterados
+$edicao_completa = (bool) $bem['dentro_prazo'];
+
+// Snapshot "antes" para o log de auditoria (remove campo calculado que não existe na tabela)
+$dadosAntes = $bem;
+unset($dadosAntes['dentro_prazo']);
 
 // ===== VALIDAÇÃO: CAMPOS OBRIGATÓRIOS (APENAS DENTRO DO PRAZO DE EDIÇÃO COMPLETA) =====
 if ($edicao_completa) {
-    if (empty($descricao)) {
-        $_SESSION['erro'] = 'O campo Descrição é obrigatório.';
-        header('Location: alterar-bem-movel');
-        exit;
+    if ($descricao === '') {
+        voltarParaAlteracao('O campo Descrição é obrigatório.');
     }
 
     if (mb_strlen($descricao, 'UTF-8') > 255) {
-        $_SESSION['erro'] = 'A descrição não pode ultrapassar 255 caracteres.';
-        header('Location: alterar-bem-movel');
-        exit;
+        voltarParaAlteracao('A descrição não pode ultrapassar 255 caracteres.');
     }
 
     if (mb_strlen($marca, 'UTF-8') > 100) {
-        $_SESSION['erro'] = 'A marca não pode ultrapassar 100 caracteres.';
-        header('Location: alterar-bem-movel');
-        exit;
+        voltarParaAlteracao('A marca não pode ultrapassar 100 caracteres.');
     }
 
-    if (empty($numero_empenho)) {
-        $_SESSION['erro'] = 'O campo Nº do Empenho é obrigatório.';
-        header('Location: alterar-bem-movel');
-        exit;
+    if ($numero_empenho === '') {
+        voltarParaAlteracao('O campo Nº do Empenho é obrigatório.');
     }
 
     if (mb_strlen($numero_empenho, 'UTF-8') > 100) {
-        $_SESSION['erro'] = 'O Nº do Empenho não pode ultrapassar 100 caracteres.';
-        header('Location: alterar-bem-movel');
-        exit;
+        voltarParaAlteracao('O Nº do Empenho não pode ultrapassar 100 caracteres.');
     }
 
-    if (empty($data_aquisicao)) {
-        $_SESSION['erro'] = 'O campo Data de Aquisição é obrigatório.';
-        header('Location: alterar-bem-movel');
-        exit;
+    if ($data_aquisicao === '') {
+        voltarParaAlteracao('O campo Data de Aquisição é obrigatório.');
     }
 
     // Valida formato de data (YYYY-MM-DD)
     $d = DateTime::createFromFormat('Y-m-d', $data_aquisicao);
     if (!$d || $d->format('Y-m-d') !== $data_aquisicao) {
-        $_SESSION['erro'] = 'Data de Aquisição inválida.';
-        header('Location: alterar-bem-movel');
-        exit;
+        voltarParaAlteracao('Data de Aquisição inválida.');
     }
 
     // Mesma regra do cadastro: a alteração não pode burlar a data futura
     if ($d > new DateTime('today')) {
-        $_SESSION['erro'] = 'A data de aquisição não pode ser maior que a data atual.';
-        header('Location: alterar-bem-movel');
-        exit;
+        voltarParaAlteracao('A data de aquisição não pode ser maior que a data atual.');
     }
 
-    if (empty($numero_nota)) {
-        $_SESSION['erro'] = 'O campo Nº da Nota é obrigatório.';
-        header('Location: alterar-bem-movel');
-        exit;
+    if ($numero_nota === '') {
+        voltarParaAlteracao('O campo Nº da Nota é obrigatório.');
     }
 
     if (mb_strlen($numero_nota, 'UTF-8') > 100) {
-        $_SESSION['erro'] = 'O Nº da Nota não pode ultrapassar 100 caracteres.';
-        header('Location: alterar-bem-movel');
-        exit;
+        voltarParaAlteracao('O Nº da Nota não pode ultrapassar 100 caracteres.');
     }
 
     // Setor de Origem: só pode ser alterado dentro do prazo de 3 dias
-    if ($setor_origem === '' || !ctype_digit($setor_origem)) {
-        $_SESSION['erro'] = 'O campo Setor de Origem é obrigatório.';
-        header('Location: alterar-bem-movel');
-        exit;
+    if (!ctype_digit($setor_origem)) {
+        voltarParaAlteracao('O campo Setor de Origem é obrigatório.');
     }
 
     try {
         $stmtSO = $pdo->prepare("SELECT id FROM setores WHERE id = :v LIMIT 1");
         $stmtSO->bindParam(':v', $setor_origem, PDO::PARAM_INT);
         $stmtSO->execute();
-        if (!$stmtSO->fetch()) {
-            $_SESSION['erro'] = 'O setor de origem selecionado é inválido.';
-            header('Location: alterar-bem-movel');
-            exit;
-        }
+        $setorOrigemExiste = (bool) $stmtSO->fetch();
     } catch (PDOException $e) {
-        $_SESSION['erro'] = 'Erro interno ao verificar o setor de origem. Tente novamente.';
-        header('Location: alterar-bem-movel');
-        exit;
+        voltarParaAlteracao('Erro interno ao verificar o setor de origem. Tente novamente.');
+    }
+
+    if (!$setorOrigemExiste) {
+        voltarParaAlteracao('O setor de origem selecionado é inválido.');
     }
 }
 
 // ===== VALIDAÇÃO: SETOR / SUBSETOR / UNIDADE (EDITÁVEIS EM QUALQUER PRAZO) =====
-if (empty($setor)) {
-    $_SESSION['erro'] = 'O campo Setor é obrigatório.';
-    header('Location: alterar-bem-movel');
-    exit;
+if ($setor === '') {
+    voltarParaAlteracao('O campo Setor é obrigatório.');
 }
 
-if (empty($subsetor)) {
-    $_SESSION['erro'] = 'O campo Subsetor é obrigatório.';
-    header('Location: alterar-bem-movel');
-    exit;
+if ($subsetor === '') {
+    voltarParaAlteracao('O campo Subsetor é obrigatório.');
 }
 
 // Confere no banco, como o cadastro já fazia: sem isso, um POST manipulado
@@ -211,90 +197,71 @@ try {
         $unidadeValida = (bool) $stmtU->fetch();
     }
 } catch (PDOException $e) {
-    $_SESSION['erro'] = 'Erro interno ao verificar a localização. Tente novamente.';
-    header('Location: alterar-bem-movel');
-    exit;
+    voltarParaAlteracao('Erro interno ao verificar a localização. Tente novamente.');
 }
 
-$erroLocalizacao = null;
 if (!$setorValido) {
-    $erroLocalizacao = 'O setor selecionado é inválido.';
-} elseif (!$subsetorValido) {
-    $erroLocalizacao = 'O subsetor selecionado é inválido.';
-} elseif (!$unidadeValida) {
-    $erroLocalizacao = 'A unidade selecionada é inválida.';
+    voltarParaAlteracao('O setor selecionado é inválido.');
 }
-
-if ($erroLocalizacao !== null) {
-    $_SESSION['erro'] = $erroLocalizacao;
-    header('Location: alterar-bem-movel');
-    exit;
+if (!$subsetorValido) {
+    voltarParaAlteracao('O subsetor selecionado é inválido.');
+}
+if (!$unidadeValida) {
+    voltarParaAlteracao('A unidade selecionada é inválida.');
 }
 
 if ($edicao_completa) {
     // Grupo: valida formato e existência no banco
-    if ($grupo_id === '' || !ctype_digit($grupo_id)) {
-        $_SESSION['erro'] = 'Grupo inválido.';
-        header('Location: alterar-bem-movel');
-        exit;
+    if (!ctype_digit($grupo_id)) {
+        voltarParaAlteracao('Grupo inválido.');
     }
 
     try {
         $stmtG = $pdo->prepare("SELECT id FROM grupos WHERE id = :id LIMIT 1");
         $stmtG->bindParam(':id', $grupo_id, PDO::PARAM_INT);
         $stmtG->execute();
-        if (!$stmtG->fetch()) {
-            $_SESSION['erro'] = 'O grupo selecionado é inválido.';
-            header('Location: alterar-bem-movel');
-            exit;
-        }
+        $grupoExiste = (bool) $stmtG->fetch();
     } catch (PDOException $e) {
-        $_SESSION['erro'] = 'Erro interno ao verificar o grupo. Tente novamente.';
-        header('Location: alterar-bem-movel');
-        exit;
+        voltarParaAlteracao('Erro interno ao verificar o grupo. Tente novamente.');
+    }
+
+    if (!$grupoExiste) {
+        voltarParaAlteracao('O grupo selecionado é inválido.');
     }
 }
 
 // Estados permitidos (sempre validado — o campo Estado é editável em qualquer prazo)
 $estados_validos = ['Novo', 'Bom', 'Regular', 'Ruim', 'Depreciado', 'Inservivel'];
-if (empty($estado) || !in_array($estado, $estados_validos, true)) {
-    $_SESSION['erro'] = 'Estado inválido.';
-    header('Location: alterar-bem-movel');
-    exit;
+if (!in_array($estado, $estados_validos, true)) {
+    voltarParaAlteracao('Estado inválido.');
 }
 
 if ($edicao_completa) {
     // Tipo: valida formato e existência no banco
-    if ($tipo_id === '' || !ctype_digit($tipo_id)) {
-        $_SESSION['erro'] = 'Tipo inválido.';
-        header('Location: alterar-bem-movel');
-        exit;
+    if (!ctype_digit($tipo_id)) {
+        voltarParaAlteracao('Tipo inválido.');
     }
 
     try {
         $stmtTp = $pdo->prepare("SELECT id FROM tipos WHERE id = :id LIMIT 1");
         $stmtTp->bindParam(':id', $tipo_id, PDO::PARAM_INT);
         $stmtTp->execute();
-        if (!$stmtTp->fetch()) {
-            $_SESSION['erro'] = 'O tipo selecionado é inválido.';
-            header('Location: alterar-bem-movel');
-            exit;
-        }
+        $tipoExiste = (bool) $stmtTp->fetch();
     } catch (PDOException $e) {
-        $_SESSION['erro'] = 'Erro interno ao verificar o tipo. Tente novamente.';
-        header('Location: alterar-bem-movel');
-        exit;
+        voltarParaAlteracao('Erro interno ao verificar o tipo. Tente novamente.');
+    }
+
+    if (!$tipoExiste) {
+        voltarParaAlteracao('O tipo selecionado é inválido.');
     }
 
     // ===== VALIDAÇÃO DO VALOR =====
     if ($valor_raw === '' || !is_numeric($valor_raw) || (float) $valor_raw < 0) {
         // Zero é permitido (ex.: bens recebidos em doação)
-        $_SESSION['erro'] = 'O campo Custo é obrigatório e deve ser igual ou maior que zero.';
-        header('Location: alterar-bem-movel');
-        exit;
+        voltarParaAlteracao('O campo Custo é obrigatório e deve ser igual ou maior que zero.');
     }
 
-    $valor = number_format((float)$valor_raw, 2, '.', '');
+    $valor = number_format((float) $valor_raw, 2, '.', '');
 }
 
 // ===== ATUALIZAÇÃO NO BANCO (PDO + Prepared Statement) =====
@@ -333,7 +300,7 @@ try {
         $stmt->bindParam(':valor',          $valor,          PDO::PARAM_STR);
         $stmt->bindParam(':id',             $id_bem,         PDO::PARAM_INT);
         $stmt->bindParam(':cnpj',           $cnpj_logado,    PDO::PARAM_STR);
-        $stmt->bindParam(':usuario_id',     $_SESSION['usuario_id'], PDO::PARAM_INT);
+        $stmt->bindParam(':usuario_id',     $usuario_id,     PDO::PARAM_INT);
     } else {
         $sql = "UPDATE bens_moveis SET
                     setor           = :setor,
@@ -350,7 +317,7 @@ try {
         $stmt->bindParam(':estado',         $estado,         PDO::PARAM_STR);
         $stmt->bindParam(':id',             $id_bem,         PDO::PARAM_INT);
         $stmt->bindParam(':cnpj',           $cnpj_logado,    PDO::PARAM_STR);
-        $stmt->bindParam(':usuario_id',     $_SESSION['usuario_id'], PDO::PARAM_INT);
+        $stmt->bindParam(':usuario_id',     $usuario_id,     PDO::PARAM_INT);
     }
 
     $stmt->execute();
@@ -404,22 +371,22 @@ try {
 
     // 'edicao' só é registrada se algo além de setor/subsetor/unidade mudou
     if ($houve_outra_alteracao) {
-        registrarAuditoria($pdo, $_SESSION['usuario_id'], 'edicao', 'bens_moveis', (int) $id_bem, $dadosAntes, $dadosDepois);
+        registrarAuditoria($pdo, $usuario_id, 'edicao', 'bens_moveis', (int) $id_bem, $dadosAntes, $dadosDepois);
     }
 
     // 'movimento' é registrada sempre que setor/subsetor/unidade mudou, com ou sem outras alterações
     if ($houve_movimento) {
-        $movimentoAntes = array_intersect_key($dadosAntes, array_flip($campos_movimento));
+        $movimentoAntes  = array_intersect_key($dadosAntes, array_flip($campos_movimento));
         $movimentoDepois = array_intersect_key($dadosDepois, array_flip($campos_movimento));
-        registrarAuditoria($pdo, $_SESSION['usuario_id'], 'movimento', 'bens_moveis', (int) $id_bem, $movimentoAntes, $movimentoDepois);
+        registrarAuditoria($pdo, $usuario_id, 'movimento', 'bens_moveis', (int) $id_bem, $movimentoAntes, $movimentoDepois);
     }
 
-    $_SESSION['sucesso'] = 'Bem móvel alterado com sucesso!';
-    header('Location: alterar-bem-movel');
-    exit;
-
 } catch (PDOException $e) {
-    $_SESSION['erro'] = 'Erro interno ao salvar as alterações. Tente novamente.';
-    header('Location: alterar-bem-movel');
-    exit;
+    voltarParaAlteracao('Erro interno ao salvar as alterações. Tente novamente.');
 }
+
+limparOld('alteracao_bem');
+
+$_SESSION['sucesso'] = 'Bem móvel alterado com sucesso!';
+header('Location: alterar-bem-movel');
+exit;

@@ -1,11 +1,16 @@
 <?php
 session_start();
 require_once 'conexao.php';
+require_once 'includes/form-flash.php';
 
 if (!isset($_SESSION['usuario'])) {
     header('Location: login');
     exit();
 }
+
+// Dados digitados antes de um erro no processamento (vazio no acesso normal).
+// pegarOld() já remove da sessão, então um F5 mostra o formulário limpo.
+$old = pegarOld('cadastro_bem');
 
 $nome_completo = $_SESSION['nome'];
 $cnpj = $_SESSION['cnpj'];
@@ -324,6 +329,11 @@ try {
 
                     <p class="img-erro" id="imgErro">⚠️ Adicione ao menos uma imagem antes de continuar.</p>
 
+                    <?php if (!empty($old)): ?>
+                        <!-- Por segurança o navegador não permite pré-preencher campos de arquivo -->
+                        <p class="img-erro visivel" id="imgReselecionar">⚠️ As imagens não são mantidas após um erro. Selecione-as novamente.</p>
+                    <?php endif; ?>
+
                     <div class="preview-container" id="previewContainer"></div>
                 </div>
 
@@ -336,6 +346,10 @@ try {
 
     <script src="js/bem-movel-comum.js"></script>
     <script>
+        // Dados digitados antes do último erro (objeto vazio no acesso normal).
+        // Gerado com json_encode + flags JSON_HEX_*, seguro dentro de <script>.
+        const OLD = <?= oldParaJs($old) ?>;
+
         // ===== SELECTS DINÂMICOS =====
         const selectSetorOrigem = document.getElementById('setor_origem');
         const selectSetor       = document.getElementById('setor');
@@ -476,9 +490,11 @@ try {
             renderizarPreviews();
             sincronizarInput();
 
-            // Esconde o erro ao adicionar imagem
+            // Esconde os avisos ao adicionar imagem
             if (arquivosSelecionados.length > 0) {
                 imgErro.classList.remove('visivel');
+                const avisoReselecionar = document.getElementById('imgReselecionar');
+                if (avisoReselecionar) avisoReselecionar.classList.remove('visivel');
             }
         });
 
@@ -528,6 +544,49 @@ try {
                 return;
             }
         });
+
+        // ===== RESTAURA OS DADOS DIGITADOS APÓS UM ERRO =====
+        // Os valores são atribuídos via .value (nunca innerHTML). Em <select>,
+        // um valor que não existe na lista simplesmente não é selecionado.
+        function restaurarFormulario(old) {
+            if (Object.keys(old).length === 0) return;
+
+            const texto = (campo) => (typeof old[campo] === 'string' ? old[campo] : '');
+
+            ['numero_tombamento', 'descricao', 'marca', 'numero_empenho',
+             'data_aquisicao', 'numero_nota'].forEach(id => {
+                document.getElementById(id).value = texto(id);
+            });
+
+            // Selects estáticos (id do elemento ≠ name em alguns casos)
+            const selects = { setor_origem: 'setor_origem', grupo: 'grupo_id', estado: 'estado', tipo: 'tipo_id' };
+            Object.entries(selects).forEach(([id, campo]) => {
+                if (texto(campo) !== '') document.getElementById(id).value = texto(campo);
+            });
+
+            // Tombamento em massa
+            if (texto('tombamento_em_massa') === '1') {
+                toggleMassa.checked = true;
+                toggleMassa.dispatchEvent(new Event('change'));
+                const qtd = parseInt(texto('quantidade_massa'), 10);
+                if (!isNaN(qtd)) {
+                    inputQuantidadeMassa.value = Math.min(Math.max(qtd, MASSA_MIN), MASSA_MAX);
+                }
+            }
+
+            // Custo: campo oculto numérico → campo visível formatado
+            definirValorMoeda(valorDisplay, valorHidden, texto('valor'));
+
+            // Localização em cascata: Setor → Subsetor → Unidade
+            if (texto('setor') !== '') {
+                selectSetor.value = texto('setor');
+                if (selectSetor.value === texto('setor')) {
+                    carregarSubsetores(texto('setor'), texto('subsetor'), texto('unidade'));
+                }
+            }
+        }
+
+        restaurarFormulario(OLD);
     </script>
 
 </body>

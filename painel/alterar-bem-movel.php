@@ -1,11 +1,16 @@
 <?php
 session_start();
 require_once 'conexao.php';
+require_once 'includes/form-flash.php';
 
 if (!isset($_SESSION['usuario'])) {
     header('Location: login');
     exit();
 }
+
+// Dados digitados antes de um erro no processamento (vazio no acesso normal).
+// pegarOld() já remove da sessão, então um F5 mostra o formulário limpo.
+$old = pegarOld('alteracao_bem');
 
 $nome_completo = $_SESSION['nome'];
 $cnpj          = $_SESSION['cnpj'];
@@ -296,6 +301,10 @@ try {
 
     <script src="js/bem-movel-comum.js"></script>
     <script>
+        // Dados digitados antes do último erro (objeto vazio no acesso normal).
+        // Gerado com json_encode + flags JSON_HEX_*, seguro dentro de <script>.
+        const OLD = <?= oldParaJs($old) ?>;
+
         // ===== REFERÊNCIAS =====
         const inputTombamento  = document.getElementById('numero_tombamento');
         const btnBuscar        = document.getElementById('btnBuscar');
@@ -495,6 +504,51 @@ try {
                 return;
             }
         });
+
+        // ===== RESTAURA OS DADOS DIGITADOS APÓS UM ERRO =====
+        // Refaz a busca do bem (para obter id, prazo e liberar os botões) e, se o
+        // bem encontrado for o mesmo do envio, sobrepõe os dados do banco com o
+        // que o usuário havia digitado. Campos bloqueados pelo prazo não são
+        // enviados no POST, então continuam com o valor do banco.
+        function restaurarAposErro(old) {
+            const texto = (campo) => (typeof old[campo] === 'string' ? old[campo] : null);
+
+            if (!texto('numero_tombamento') || !texto('id_bem')) return;
+
+            // Nome do campo no POST → nome da chave retornada por buscar-bem-movel.php
+            const mapaCampos = {
+                descricao:      'descricao',
+                marca:          'marca',
+                numero_empenho: 'numero_empenho',
+                data_aquisicao: 'data_aquisicao',
+                numero_nota:    'numero_nota',
+                setor_origem:   'setor_original',
+                setor:          'setor',
+                subsetor:       'subsetor',
+                unidade:        'unidade',
+                grupo_id:       'grupo_id',
+                estado:         'estado',
+                tipo_id:        'tipo_id',
+                valor:          'valor',
+            };
+
+            inputTombamento.value = texto('numero_tombamento');
+
+            realizarBusca().then(bem => {
+                if (!bem || String(bem.id) !== texto('id_bem')) return;
+
+                const mesclado = { ...bem };
+                Object.entries(mapaCampos).forEach(([campoPost, campoBem]) => {
+                    if (texto(campoPost) !== null) mesclado[campoBem] = texto(campoPost);
+                });
+
+                preencherFormulario(mesclado);
+                buscaInfo.className = 'busca-info encontrado';
+                buscaInfo.textContent = '✏️ Os dados que você havia digitado foram restaurados. Corrija o erro indicado acima e salve novamente.';
+            });
+        }
+
+        restaurarAposErro(OLD);
     </script>
 
 </body>
