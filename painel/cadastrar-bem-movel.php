@@ -334,59 +334,18 @@ try {
         <?php require 'includes/footer.php'; ?>
     </main>
 
+    <script src="js/bem-movel-comum.js"></script>
     <script>
         // ===== SELECTS DINÂMICOS =====
         const selectSetorOrigem = document.getElementById('setor_origem');
-        const selectSetor     = document.getElementById('setor');
-        const selectSubsetor  = document.getElementById('subsetor');
-        const selectUnidade   = document.getElementById('unidade');
-        const wrapperSubsetor = document.getElementById('wrapper-subsetor');
-        const wrapperUnidade  = document.getElementById('wrapper-unidade');
+        const selectSetor       = document.getElementById('setor');
 
-        // Carrega os subsetores de um setor. Se subsetorAlvo for informado e existir
-        // na lista retornada, seleciona-o automaticamente (usado pelo botão de reaproveitar dados).
-        function carregarSubsetores(setor, subsetorAlvo = null) {
-            selectUnidade.innerHTML = '<option value="" selected>Selecione primeiro o subsetor</option>';
-            selectUnidade.disabled  = true;
-
-            selectSubsetor.innerHTML = '<option value="" disabled selected>Carregando...</option>';
-            selectSubsetor.disabled  = true;
-            wrapperSubsetor.classList.add('loading');
-
-            return fetch('buscar-subsetores.php?setor=' + encodeURIComponent(setor))
-                .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-                .then(data => {
-                    wrapperSubsetor.classList.remove('loading');
-                    if (data.length === 0) {
-                        selectSubsetor.innerHTML = '<option value="" disabled selected>Nenhum subsetor encontrado</option>';
-                        return;
-                    }
-
-                    selectSubsetor.innerHTML = '<option value="" disabled selected>Selecione o subsetor</option>';
-                    data.forEach(item => {
-                        const opt = document.createElement('option');
-                        opt.value = item.descricao;
-                        opt.textContent = item.descricao;
-                        selectSubsetor.appendChild(opt);
-                    });
-                    selectSubsetor.disabled = false;
-
-                    if (subsetorAlvo) {
-                        const existe = Array.from(selectSubsetor.options).some(o => o.value === subsetorAlvo);
-                        if (existe) {
-                            selectSubsetor.value = subsetorAlvo;
-                            selectSubsetor.dispatchEvent(new Event('change'));
-                        }
-                    }
-                })
-                .catch(() => {
-                    wrapperSubsetor.classList.remove('loading');
-                    selectSubsetor.innerHTML = '<option value="" disabled selected>Erro ao carregar</option>';
-                });
-        }
-
-        selectSetor.addEventListener('change', function () {
-            carregarSubsetores(this.value);
+        const { carregarSubsetores } = criarCascataLocalizacao({
+            selectSetor:     selectSetor,
+            selectSubsetor:  document.getElementById('subsetor'),
+            selectUnidade:   document.getElementById('unidade'),
+            wrapperSubsetor: document.getElementById('wrapper-subsetor'),
+            wrapperUnidade:  document.getElementById('wrapper-unidade'),
         });
 
         // Ao selecionar o Setor de Origem, preenche automaticamente o campo Setor
@@ -450,39 +409,6 @@ try {
                 });
         });
 
-        selectSubsetor.addEventListener('change', function () {
-            const setor    = selectSetor.value;
-            const subsetor = this.value;
-
-            selectUnidade.innerHTML = '<option value="" selected>Carregando...</option>';
-            selectUnidade.disabled  = true;
-            wrapperUnidade.classList.add('loading');
-
-            fetch('buscar-unidades.php?setor=' + encodeURIComponent(setor) + '&subsetor=' + encodeURIComponent(subsetor))
-                .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-                .then(data => {
-                    wrapperUnidade.classList.remove('loading');
-                    if (data.length === 0) {
-                        selectUnidade.innerHTML = '<option value="" selected>Nenhuma unidade encontrada</option>';
-                        selectUnidade.disabled  = true;
-                    } else {
-                        selectUnidade.innerHTML = '<option value="" selected>Nenhuma (opcional)</option>';
-                        data.forEach(item => {
-                            const opt = document.createElement('option');
-                            opt.value = item.descricao;
-                            opt.textContent = item.descricao;
-                            selectUnidade.appendChild(opt);
-                        });
-                        selectUnidade.disabled = false;
-                    }
-                })
-                .catch(() => {
-                    wrapperUnidade.classList.remove('loading');
-                    selectUnidade.innerHTML = '<option value="" selected>Erro ao carregar</option>';
-                    selectUnidade.disabled  = true;
-                });
-        });
-
         // ===== Nº TOMBAMENTO: BOTÕES +/- =====
         const inputTomb = document.getElementById('numero_tombamento');
         document.getElementById('tombMenos').addEventListener('click', () => {
@@ -532,26 +458,7 @@ try {
         const valorDisplay = document.getElementById('valor_display');
         const valorHidden  = document.getElementById('valor');
 
-        valorDisplay.addEventListener('input', function () {
-            // Remove tudo que não for dígito
-            let digits = this.value.replace(/\D/g, '');
-
-            // Garante ao menos 3 dígitos (ex: "001" = R$ 0,01)
-            digits = digits.padStart(3, '0');
-
-            // Separa centavos (2 últimos) dos reais
-            const centavos = digits.slice(-2);
-            let reais      = digits.slice(0, -2).replace(/^0+/, '') || '0';
-
-            // Insere separadores de milhar
-            reais = reais.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-
-            const formatado = reais + ',' + centavos;
-            this.value = formatado;
-
-            // Valor numérico para o campo oculto (ex: 1500.99)
-            valorHidden.value = reais.replace(/\./g, '') + '.' + centavos;
-        });
+        aplicarMascaraMoeda(valorDisplay, valorHidden);
 
         // ===== PREVIEW E VALIDAÇÃO DE IMAGENS =====
         const inputImagens     = document.getElementById('imagens');

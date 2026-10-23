@@ -294,6 +294,7 @@ try {
         <?php require 'includes/footer.php'; ?>
     </main>
 
+    <script src="js/bem-movel-comum.js"></script>
     <script>
         // ===== REFERÊNCIAS =====
         const inputTombamento  = document.getElementById('numero_tombamento');
@@ -360,14 +361,21 @@ try {
             formExclusao.submit();
         });
 
+        // ===== SELECTS DE LOCALIZAÇÃO EM CASCATA =====
+        const { carregarSubsetores, resetar: resetarCascata } = criarCascataLocalizacao({
+            selectSetor, selectSubsetor, selectUnidade, wrapperSubsetor, wrapperUnidade,
+        });
+
         // ===== BUSCA DO BEM POR TOMBAMENTO =====
+        // Retorna uma Promise que resolve com os dados do bem (ou null), para que
+        // a restauração após erro possa aguardar a busca terminar.
         function realizarBusca() {
             const tombamento = inputTombamento.value.trim();
 
             if (!tombamento) {
                 buscaInfo.className = 'busca-info nao-encontrado';
                 buscaInfo.textContent = '⚠️ Informe o número de tombamento.';
-                return;
+                return Promise.resolve(null);
             }
 
             // Estado: carregando
@@ -376,7 +384,7 @@ try {
             buscaInfo.className = 'busca-info';
             buscaInfo.textContent = '';
 
-            fetch('buscar-bem-movel.php?numero_tombamento=' + encodeURIComponent(tombamento))
+            return fetch('buscar-bem-movel.php?numero_tombamento=' + encodeURIComponent(tombamento))
                 .then(r => { if (!r.ok) throw new Error('Erro na requisição'); return r.json(); })
                 .then(data => {
                     btnBuscar.textContent = '🔍';
@@ -390,7 +398,7 @@ try {
                         btnExcluir.disabled = true;
                         idBemInput.value = '';
                         aplicarModoEdicao(true); // reseta os campos para o estado padrão (habilitados)
-                        return;
+                        return null;
                     }
 
                     // Preenche os campos com os dados retornados
@@ -401,12 +409,14 @@ try {
                     camposBem.classList.add('ativo');
                     btnSubmit.disabled = false;
                     btnExcluir.disabled = false;
+                    return data;
                 })
                 .catch(() => {
                     btnBuscar.textContent = '🔍';
                     btnBuscar.classList.remove('carregando');
                     buscaInfo.className = 'busca-info nao-encontrado';
                     buscaInfo.textContent = '❌ Erro ao realizar a busca. Tente novamente.';
+                    return null;
                 });
         }
 
@@ -426,19 +436,22 @@ try {
             setVal('estado',         bem.estado         ?? '');
             setVal('tipo',           bem.tipo_id        ?? '');
 
-            // Custo: formata e preenche os dois campos
-            const valorNum = parseFloat(bem.valor ?? 0);
-            if (!isNaN(valorNum)) {
-                document.getElementById('valor').value = valorNum.toFixed(2);
-                document.getElementById('valor_display').value = formatarMoeda(valorNum);
-            }
+            // Custo: preenche o campo oculto (numérico) e o visível (formatado)
+            definirValorMoeda(
+                document.getElementById('valor_display'),
+                document.getElementById('valor'),
+                bem.valor ?? ''
+            );
 
-            // Setor → dispara carregamento de subsetor → depois unidade
+            // Setor → carrega subsetores → depois unidades
             const setorVal = bem.setor ?? '';
             setVal('setor', setorVal);
 
-            if (setorVal) {
+            if (setorVal && selectSetor.value === String(setorVal)) {
                 carregarSubsetores(setorVal, bem.subsetor ?? '', bem.unidade ?? '');
+            } else {
+                // Setor inexistente na lista: limpa a cascata em vez de manter a do bem anterior
+                resetarCascata();
             }
         }
 
@@ -447,154 +460,6 @@ try {
             if (!el) return;
             el.value = valor;
         }
-
-        // ===== FORMATA NÚMERO PARA MOEDA BRASILEIRA =====
-        function formatarMoeda(numero) {
-            const centavos = Math.round(numero * 100);
-            const digits   = String(centavos).padStart(3, '0');
-            const partesCentavos = digits.slice(-2);
-            let   partesReais    = digits.slice(0, -2).replace(/^0+/, '') || '0';
-            partesReais = partesReais.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-            return partesReais + ',' + partesCentavos;
-        }
-
-        // ===== CARREGA SUBSETORES E DEPOIS UNIDADES =====
-        function carregarSubsetores(setor, subsetorAtual, unidadeAtual) {
-            selectSubsetor.innerHTML = '<option value="" disabled selected>Carregando...</option>';
-            selectSubsetor.disabled  = true;
-            wrapperSubsetor.classList.add('loading');
-
-            selectUnidade.innerHTML = '<option value="" selected>Selecione primeiro o subsetor</option>';
-            selectUnidade.disabled  = true;
-
-            fetch('buscar-subsetores.php?setor=' + encodeURIComponent(setor))
-                .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-                .then(data => {
-                    wrapperSubsetor.classList.remove('loading');
-
-                    if (data.length === 0) {
-                        selectSubsetor.innerHTML = '<option value="" disabled selected>Nenhum subsetor encontrado</option>';
-                        return;
-                    }
-
-                    selectSubsetor.innerHTML = '<option value="" disabled selected>Selecione o subsetor</option>';
-                    data.forEach(item => {
-                        const opt = document.createElement('option');
-                        opt.value       = item.descricao;
-                        opt.textContent = item.descricao;
-                        if (item.descricao === subsetorAtual) opt.selected = true;
-                        selectSubsetor.appendChild(opt);
-                    });
-                    selectSubsetor.disabled = false;
-
-                    // Se havia um subsetor salvo, carrega as unidades correspondentes
-                    if (subsetorAtual) {
-                        carregarUnidades(setor, subsetorAtual, unidadeAtual);
-                    }
-                })
-                .catch(() => {
-                    wrapperSubsetor.classList.remove('loading');
-                    selectSubsetor.innerHTML = '<option value="" disabled selected>Erro ao carregar</option>';
-                });
-        }
-
-        function carregarUnidades(setor, subsetor, unidadeAtual) {
-            selectUnidade.innerHTML = '<option value="" selected>Carregando...</option>';
-            selectUnidade.disabled  = true;
-            wrapperUnidade.classList.add('loading');
-
-            fetch('buscar-unidades.php?setor=' + encodeURIComponent(setor) + '&subsetor=' + encodeURIComponent(subsetor))
-                .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-                .then(data => {
-                    wrapperUnidade.classList.remove('loading');
-
-                    if (data.length === 0) {
-                        selectUnidade.innerHTML = '<option value="" selected>Nenhuma unidade encontrada</option>';
-                        selectUnidade.disabled  = true;
-                        return;
-                    }
-
-                    selectUnidade.innerHTML = '<option value="" selected>Nenhuma (opcional)</option>';
-                    data.forEach(item => {
-                        const opt = document.createElement('option');
-                        opt.value       = item.descricao;
-                        opt.textContent = item.descricao;
-                        if (item.descricao === unidadeAtual) opt.selected = true;
-                        selectUnidade.appendChild(opt);
-                    });
-                    selectUnidade.disabled = false;
-                })
-                .catch(() => {
-                    wrapperUnidade.classList.remove('loading');
-                    selectUnidade.innerHTML = '<option value="" selected>Erro ao carregar</option>';
-                    selectUnidade.disabled  = true;
-                });
-        }
-
-        // ===== SELECTS DINÂMICOS (interação manual do usuário) =====
-        selectSetor.addEventListener('change', function () {
-            selectUnidade.innerHTML = '<option value="" selected>Selecione primeiro o subsetor</option>';
-            selectUnidade.disabled  = true;
-
-            selectSubsetor.innerHTML = '<option value="" disabled selected>Carregando...</option>';
-            selectSubsetor.disabled  = true;
-            wrapperSubsetor.classList.add('loading');
-
-            fetch('buscar-subsetores.php?setor=' + encodeURIComponent(this.value))
-                .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-                .then(data => {
-                    wrapperSubsetor.classList.remove('loading');
-                    if (data.length === 0) {
-                        selectSubsetor.innerHTML = '<option value="" disabled selected>Nenhum subsetor encontrado</option>';
-                    } else {
-                        selectSubsetor.innerHTML = '<option value="" disabled selected>Selecione o subsetor</option>';
-                        data.forEach(item => {
-                            const opt = document.createElement('option');
-                            opt.value       = item.descricao;
-                            opt.textContent = item.descricao;
-                            selectSubsetor.appendChild(opt);
-                        });
-                        selectSubsetor.disabled = false;
-                    }
-                })
-                .catch(() => {
-                    wrapperSubsetor.classList.remove('loading');
-                    selectSubsetor.innerHTML = '<option value="" disabled selected>Erro ao carregar</option>';
-                });
-        });
-
-        selectSubsetor.addEventListener('change', function () {
-            const setor    = selectSetor.value;
-            const subsetor = this.value;
-
-            selectUnidade.innerHTML = '<option value="" selected>Carregando...</option>';
-            selectUnidade.disabled  = true;
-            wrapperUnidade.classList.add('loading');
-
-            fetch('buscar-unidades.php?setor=' + encodeURIComponent(setor) + '&subsetor=' + encodeURIComponent(subsetor))
-                .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-                .then(data => {
-                    wrapperUnidade.classList.remove('loading');
-                    if (data.length === 0) {
-                        selectUnidade.innerHTML = '<option value="" selected>Nenhuma unidade encontrada</option>';
-                        selectUnidade.disabled  = true;
-                    } else {
-                        selectUnidade.innerHTML = '<option value="" selected>Nenhuma (opcional)</option>';
-                        data.forEach(item => {
-                            const opt = document.createElement('option');
-                            opt.value       = item.descricao;
-                            opt.textContent = item.descricao;
-                            selectUnidade.appendChild(opt);
-                        });
-                        selectUnidade.disabled = false;
-                    }
-                })
-                .catch(() => {
-                    wrapperUnidade.classList.remove('loading');
-                    selectUnidade.innerHTML = '<option value="" selected>Erro ao carregar</option>';
-                    selectUnidade.disabled  = true;
-                });
-        });
 
         // ===== EVENTOS DE BUSCA =====
         btnBuscar.addEventListener('click', realizarBusca);
@@ -607,15 +472,7 @@ try {
         });
 
         // ===== FORMATAÇÃO DO CUSTO (R$) =====
-        document.getElementById('valor_display').addEventListener('input', function () {
-            let digits = this.value.replace(/\D/g, '');
-            digits = digits.padStart(3, '0');
-            const centavos = digits.slice(-2);
-            let reais      = digits.slice(0, -2).replace(/^0+/, '') || '0';
-            reais = reais.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-            this.value = reais + ',' + centavos;
-            document.getElementById('valor').value = reais.replace(/\./g, '') + '.' + centavos;
-        });
+        aplicarMascaraMoeda(document.getElementById('valor_display'), document.getElementById('valor'));
 
         // ===== VALIDAÇÃO DO FORM ANTES DE ENVIAR =====
         document.getElementById('formBem').addEventListener('submit', function (e) {
