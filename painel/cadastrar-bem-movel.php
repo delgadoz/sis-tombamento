@@ -521,8 +521,8 @@ try {
                 return;
             }
 
-            // Garante que o valor oculto está preenchido
-            if (!valorHidden.value || parseFloat(valorHidden.value) < 0) {
+            // Garante que o valor oculto está preenchido (mesma regra do servidor: >= 0; zero é permitido)
+            if (!valorHidden.value || !(parseFloat(valorHidden.value) >= 0)) {
                 e.preventDefault();
                 valorDisplay.focus();
                 return;

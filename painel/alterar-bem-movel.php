@@ -126,7 +126,7 @@ try {
 
                             <div class="form-group">
                                 <label for="data_aquisicao">Data de Aquisição</label>
-                                <input type="date" id="data_aquisicao" name="data_aquisicao" required>
+                                <input type="date" id="data_aquisicao" name="data_aquisicao" max="<?= date('Y-m-d') ?>" required>
                             </div>
 
                             <div class="form-group">
@@ -485,11 +485,13 @@ try {
                 return;
             }
 
-            // Garante que o valor oculto está preenchido
-            const valorHidden = document.getElementById('valor');
-            if (!valorHidden.value || parseFloat(valorHidden.value) <= 0) {
+            // Garante que o valor oculto está preenchido (mesma regra do servidor: >= 0; zero é permitido).
+            // Só vale quando o custo é editável: fora do prazo de 3 dias o servidor ignora o custo.
+            const valorDisplay = document.getElementById('valor_display');
+            const valorHidden  = document.getElementById('valor');
+            if (!valorDisplay.disabled && (!valorHidden.value || !(parseFloat(valorHidden.value) >= 0))) {
                 e.preventDefault();
-                document.getElementById('valor_display').focus();
+                valorDisplay.focus();
                 return;
             }
         });

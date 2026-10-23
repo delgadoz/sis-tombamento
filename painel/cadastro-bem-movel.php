@@ -68,10 +68,32 @@ if (empty($subsetor))                  $erros[] = 'O Subsetor é obrigatório.';
 if ($grupo_id === '')                  $erros[] = 'O Grupo é obrigatório.';
 if (empty($estado))                    $erros[] = 'O Estado é obrigatório.';
 if ($tipo_id === '')                   $erros[] = 'O Tipo é obrigatório.';
-if ($valor === '' || $valor === false)  $erros[] = 'O Custo é obrigatório.';
+if ($valor === '')                     $erros[] = 'O Custo é obrigatório.';
 
 if (!empty($erros)) {
     $_SESSION['erro'] = implode(' ', $erros);
+    header('Location: cadastrar-bem-movel');
+    exit;
+}
+
+// ===== VALIDAÇÕES DE TAMANHO (em caracteres, não em bytes) =====
+if (mb_strlen($descricao, 'UTF-8') > 255) {
+    $_SESSION['erro'] = 'A descrição não pode ultrapassar 255 caracteres.';
+    header('Location: cadastrar-bem-movel');
+    exit;
+}
+if (mb_strlen($marca, 'UTF-8') > 100) {
+    $_SESSION['erro'] = 'A marca não pode ultrapassar 100 caracteres.';
+    header('Location: cadastrar-bem-movel');
+    exit;
+}
+if (mb_strlen($numero_empenho, 'UTF-8') > 100) {
+    $_SESSION['erro'] = 'O Nº do Empenho não pode ultrapassar 100 caracteres.';
+    header('Location: cadastrar-bem-movel');
+    exit;
+}
+if (mb_strlen($numero_nota, 'UTF-8') > 100) {
+    $_SESSION['erro'] = 'O Nº da Nota não pode ultrapassar 100 caracteres.';
     header('Location: cadastrar-bem-movel');
     exit;
 }
@@ -93,16 +115,31 @@ if($dataObj > $hoje){
     exit;
 }
 
-// Valor numérico positivo
-if (!is_numeric($valor)) {
-    $_SESSION['erro'] = 'O campo Custo deve receber um valor numérico.';
+// Valor numérico não negativo (zero é permitido: ex. bens recebidos em doação)
+if (!is_numeric($valor) || (float) $valor < 0) {
+    $_SESSION['erro'] = 'O campo Custo deve ser um valor numérico igual ou maior que zero.';
     header('Location: cadastrar-bem-movel');
     exit;
 }
 
-// Nº tombamento
-if (!is_numeric($numero_tombamento) || (int)$numero_tombamento < 0) {
-    $_SESSION['erro'] = 'O numero de tombamento não pode ser negativo.';
+// Nº tombamento: apenas dígitos (is_numeric aceitaria "1.5", "1e3", "-0"...)
+if (!ctype_digit($numero_tombamento)) {
+    $_SESSION['erro'] = 'O Nº de Tombamento deve conter apenas números.';
+    header('Location: cadastrar-bem-movel');
+    exit;
+}
+
+// Normaliza zeros à esquerda ("007" -> "7"). O INSERT já gravava o número
+// normalizado, mas a checagem de duplicidade usava o texto cru, então "007"
+// passava pela checagem mesmo com o "7" já cadastrado.
+$numero_tombamento = ltrim($numero_tombamento, '0');
+if ($numero_tombamento === '') {
+    $numero_tombamento = '0';
+}
+
+// Evita estouro de inteiro ao converter com (int) mais abaixo
+if (strlen($numero_tombamento) > 15) {
+    $_SESSION['erro'] = 'O Nº de Tombamento é grande demais.';
     header('Location: cadastrar-bem-movel');
     exit;
 }
@@ -135,7 +172,7 @@ if ($tombamento_massa) {
         exit;
     }
 
-    if (!ctype_digit((string) $numero_tombamento) || (int) $numero_tombamento < 1) {
+    if ((int) $numero_tombamento < 1) {
         $_SESSION['erro'] = 'O Nº de Tombamento deve ser um número inteiro positivo para tombamento em massa.';
         header('Location: cadastrar-bem-movel');
         exit;
@@ -267,7 +304,8 @@ if ($tombamento_massa) {
         $conflitos = $stmtT->fetchAll(PDO::FETCH_COLUMN);
 
         if (!empty($conflitos)) {
-            $lista = implode(', ', array_map('htmlspecialchars', $conflitos));
+            // Sem htmlspecialchars aqui: a mensagem já é escapada ao ser exibida.
+            $lista = implode(', ', $conflitos);
             $_SESSION['erro'] = "Os seguintes números de tombamento já estão cadastrados: {$lista}.";
             header('Location: cadastrar-bem-movel');
             exit;
@@ -305,11 +343,24 @@ if (!is_dir($pastaUpload)) {
     mkdir($pastaUpload, 0755, true);
 }
 
+/**
+ * Remove as imagens já gravadas nesta requisição (usado quando uma imagem
+ * posterior falha ou o INSERT dá erro, para não deixar arquivos órfãos).
+ */
+function removerImagensSalvas(array $caminhos): void
+{
+    foreach ($caminhos as $caminho) {
+        if (is_file($caminho)) {
+            unlink($caminho);
+        }
+    }
+}
+
 $arquivos = $_FILES['imagens'] ?? [];
 
 // Normaliza a estrutura do $_FILES para array de arquivos
 $listaArquivos = [];
-if (!empty($arquivos['name'][0])) {
+if (isset($arquivos['name']) && is_array($arquivos['name']) && !empty($arquivos['name'][0])) {
     for ($i = 0; $i < count($arquivos['name']); $i++) {
         $listaArquivos[] = [
             'name'     => $arquivos['name'][$i],
@@ -327,12 +378,14 @@ $listaArquivos = array_slice($listaArquivos, 0, 2);
 foreach ($listaArquivos as $arquivo) {
 
     if ($arquivo['error'] !== UPLOAD_ERR_OK) {
+        removerImagensSalvas($urlsImagens);
         $_SESSION['erro'] = 'Erro no upload de uma das imagens.';
         header('Location: cadastrar-bem-movel');
         exit;
     }
 
     if ($arquivo['size'] > $tamanhoMaximo) {
+        removerImagensSalvas($urlsImagens);
         $_SESSION['erro'] = 'Cada imagem deve ter no máximo 5MB.';
         header('Location: cadastrar-bem-movel');
         exit;
@@ -344,6 +397,7 @@ foreach ($listaArquivos as $arquivo) {
     finfo_close($finfo);
 
     if (!in_array($mimeReal, $tiposPermitidos, true)) {
+        removerImagensSalvas($urlsImagens);
         $_SESSION['erro'] = 'Apenas imagens JPG, PNG ou WEBP são permitidas.';
         header('Location: cadastrar-bem-movel');
         exit;
@@ -355,6 +409,7 @@ foreach ($listaArquivos as $arquivo) {
     $destino     = $pastaUpload . $nomeArquivo;
 
     if (!move_uploaded_file($arquivo['tmp_name'], $destino)) {
+        removerImagensSalvas($urlsImagens);
         $_SESSION['erro'] = 'Falha ao salvar a imagem. Tente novamente.';
         header('Location: cadastrar-bem-movel');
         exit;
@@ -449,9 +504,7 @@ try {
         $pdo->rollBack();
     }
     // Remove imagens já salvas em caso de falha no banco
-    foreach ($urlsImagens as $url) {
-        if (file_exists($url)) unlink($url);
-    }
+    removerImagensSalvas($urlsImagens);
     $_SESSION['erro'] = 'Erro interno. Tente novamente.';
     header('Location: cadastrar-bem-movel');
     exit;

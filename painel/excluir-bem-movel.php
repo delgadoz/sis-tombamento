@@ -96,6 +96,7 @@ if (!empty($bem['imagens'])) {
     }
 }
 
-$_SESSION['sucesso'] = 'Bem móvel Nº ' . htmlspecialchars($bem['numero_tombamento']) . ' excluído com sucesso.';
+// Sem htmlspecialchars aqui: a mensagem já é escapada ao ser exibida.
+$_SESSION['sucesso'] = 'Bem móvel Nº ' . $bem['numero_tombamento'] . ' excluído com sucesso.';
 header('Location: alterar-bem-movel');
 exit;

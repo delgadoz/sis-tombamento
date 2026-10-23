@@ -94,8 +94,14 @@ if ($edicao_completa) {
         exit;
     }
 
-    if (strlen($descricao) > 255) {
+    if (mb_strlen($descricao, 'UTF-8') > 255) {
         $_SESSION['erro'] = 'A descrição não pode ultrapassar 255 caracteres.';
+        header('Location: alterar-bem-movel');
+        exit;
+    }
+
+    if (mb_strlen($marca, 'UTF-8') > 100) {
+        $_SESSION['erro'] = 'A marca não pode ultrapassar 100 caracteres.';
         header('Location: alterar-bem-movel');
         exit;
     }
@@ -106,7 +112,7 @@ if ($edicao_completa) {
         exit;
     }
 
-    if (strlen($numero_empenho) > 100) {
+    if (mb_strlen($numero_empenho, 'UTF-8') > 100) {
         $_SESSION['erro'] = 'O Nº do Empenho não pode ultrapassar 100 caracteres.';
         header('Location: alterar-bem-movel');
         exit;
@@ -139,7 +145,7 @@ if ($edicao_completa) {
         exit;
     }
 
-    if (strlen($numero_nota) > 100) {
+    if (mb_strlen($numero_nota, 'UTF-8') > 100) {
         $_SESSION['erro'] = 'O Nº da Nota não pode ultrapassar 100 caracteres.';
         header('Location: alterar-bem-movel');
         exit;
@@ -281,8 +287,9 @@ if ($edicao_completa) {
     }
 
     // ===== VALIDAÇÃO DO VALOR =====
-    if ($valor_raw === '' || !is_numeric($valor_raw) || (float)$valor_raw <= 0) {
-        $_SESSION['erro'] = 'O campo Custo é obrigatório e deve ser maior que zero.';
+    if ($valor_raw === '' || !is_numeric($valor_raw) || (float) $valor_raw < 0) {
+        // Zero é permitido (ex.: bens recebidos em doação)
+        $_SESSION['erro'] = 'O campo Custo é obrigatório e deve ser igual ou maior que zero.';
         header('Location: alterar-bem-movel');
         exit;
     }
