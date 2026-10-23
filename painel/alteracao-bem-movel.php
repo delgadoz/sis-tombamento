@@ -51,16 +51,20 @@ if (empty($id_bem) || !ctype_digit($id_bem)) {
     exit;
 }
 
-// ===== VERIFICA SE O BEM EXISTE, PERTENCE AO CNPJ DO USUÁRIO E SE ESTÁ DENTRO DO PRAZO =====
+// ===== VERIFICA SE O BEM EXISTE, PERTENCE AO USUÁRIO/CNPJ E SE ESTÁ DENTRO DO PRAZO =====
+// created_by: a busca (buscar-bem-movel.php) só mostra bens do próprio usuário,
+// então a gravação precisa aplicar a mesma regra; sem isso, bastaria enviar
+// outro id_bem no POST para alterar o bem de um colega.
 try {
     $stmtVerifica = $pdo->prepare(
         "SELECT *, (created_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)) AS dentro_prazo
          FROM bens_moveis
-         WHERE id = :id AND cnpj = :cnpj
+         WHERE id = :id AND cnpj = :cnpj AND created_by = :usuario_id
          LIMIT 1"
     );
-    $stmtVerifica->bindParam(':id',   $id_bem,       PDO::PARAM_INT);
-    $stmtVerifica->bindParam(':cnpj', $cnpj_logado,  PDO::PARAM_STR);
+    $stmtVerifica->bindParam(':id',         $id_bem,                 PDO::PARAM_INT);
+    $stmtVerifica->bindParam(':cnpj',       $cnpj_logado,            PDO::PARAM_STR);
+    $stmtVerifica->bindParam(':usuario_id', $_SESSION['usuario_id'], PDO::PARAM_INT);
     $stmtVerifica->execute();
     $bem = $stmtVerifica->fetch(PDO::FETCH_ASSOC);
 
@@ -122,6 +126,13 @@ if ($edicao_completa) {
         exit;
     }
 
+    // Mesma regra do cadastro: a alteração não pode burlar a data futura
+    if ($d > new DateTime('today')) {
+        $_SESSION['erro'] = 'A data de aquisição não pode ser maior que a data atual.';
+        header('Location: alterar-bem-movel');
+        exit;
+    }
+
     if (empty($numero_nota)) {
         $_SESSION['erro'] = 'O campo Nº da Nota é obrigatório.';
         header('Location: alterar-bem-movel');
@@ -157,7 +168,7 @@ if ($edicao_completa) {
     }
 }
 
-// ===== VALIDAÇÃO: SETOR / SUBSETOR (SEMPRE OBRIGATÓRIOS, EDITÁVEIS EM QUALQUER PRAZO) =====
+// ===== VALIDAÇÃO: SETOR / SUBSETOR / UNIDADE (EDITÁVEIS EM QUALQUER PRAZO) =====
 if (empty($setor)) {
     $_SESSION['erro'] = 'O campo Setor é obrigatório.';
     header('Location: alterar-bem-movel');
@@ -166,6 +177,50 @@ if (empty($setor)) {
 
 if (empty($subsetor)) {
     $_SESSION['erro'] = 'O campo Subsetor é obrigatório.';
+    header('Location: alterar-bem-movel');
+    exit;
+}
+
+// Confere no banco, como o cadastro já fazia: sem isso, um POST manipulado
+// gravaria qualquer texto como setor/subsetor/unidade.
+try {
+    $stmtS = $pdo->prepare("SELECT id FROM setores WHERE descricao = :v LIMIT 1");
+    $stmtS->bindParam(':v', $setor, PDO::PARAM_STR);
+    $stmtS->execute();
+    $setorValido = (bool) $stmtS->fetch();
+
+    $stmtSS = $pdo->prepare("SELECT id FROM subsetores WHERE descricao = :sub AND setor = :set LIMIT 1");
+    $stmtSS->bindParam(':sub', $subsetor, PDO::PARAM_STR);
+    $stmtSS->bindParam(':set', $setor,    PDO::PARAM_STR);
+    $stmtSS->execute();
+    $subsetorValido = (bool) $stmtSS->fetch();
+
+    $unidadeValida = true;
+    if ($unidade !== '') {
+        $stmtU = $pdo->prepare("SELECT id FROM unidades WHERE descricao = :u AND setor = :s AND subsetor = :ss LIMIT 1");
+        $stmtU->bindParam(':u',  $unidade,  PDO::PARAM_STR);
+        $stmtU->bindParam(':s',  $setor,    PDO::PARAM_STR);
+        $stmtU->bindParam(':ss', $subsetor, PDO::PARAM_STR);
+        $stmtU->execute();
+        $unidadeValida = (bool) $stmtU->fetch();
+    }
+} catch (PDOException $e) {
+    $_SESSION['erro'] = 'Erro interno ao verificar a localização. Tente novamente.';
+    header('Location: alterar-bem-movel');
+    exit;
+}
+
+$erroLocalizacao = null;
+if (!$setorValido) {
+    $erroLocalizacao = 'O setor selecionado é inválido.';
+} elseif (!$subsetorValido) {
+    $erroLocalizacao = 'O subsetor selecionado é inválido.';
+} elseif (!$unidadeValida) {
+    $erroLocalizacao = 'A unidade selecionada é inválida.';
+}
+
+if ($erroLocalizacao !== null) {
+    $_SESSION['erro'] = $erroLocalizacao;
     header('Location: alterar-bem-movel');
     exit;
 }
@@ -252,7 +307,7 @@ try {
                     estado          = :estado,
                     tipo_id         = :tipo_id,
                     valor           = :valor
-                WHERE id = :id AND cnpj = :cnpj";
+                WHERE id = :id AND cnpj = :cnpj AND created_by = :usuario_id";
 
         $stmt = $pdo->prepare($sql);
 
@@ -271,13 +326,14 @@ try {
         $stmt->bindParam(':valor',          $valor,          PDO::PARAM_STR);
         $stmt->bindParam(':id',             $id_bem,         PDO::PARAM_INT);
         $stmt->bindParam(':cnpj',           $cnpj_logado,    PDO::PARAM_STR);
+        $stmt->bindParam(':usuario_id',     $_SESSION['usuario_id'], PDO::PARAM_INT);
     } else {
         $sql = "UPDATE bens_moveis SET
                     setor           = :setor,
                     subsetor        = :subsetor,
                     unidade         = :unidade,
                     estado          = :estado
-                WHERE id = :id AND cnpj = :cnpj";
+                WHERE id = :id AND cnpj = :cnpj AND created_by = :usuario_id";
 
         $stmt = $pdo->prepare($sql);
 
@@ -287,6 +343,7 @@ try {
         $stmt->bindParam(':estado',         $estado,         PDO::PARAM_STR);
         $stmt->bindParam(':id',             $id_bem,         PDO::PARAM_INT);
         $stmt->bindParam(':cnpj',           $cnpj_logado,    PDO::PARAM_STR);
+        $stmt->bindParam(':usuario_id',     $_SESSION['usuario_id'], PDO::PARAM_INT);
     }
 
     $stmt->execute();

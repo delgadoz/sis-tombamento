@@ -39,12 +39,14 @@ try {
     $stmtVerifica = $pdo->prepare(
         "SELECT *
          FROM bens_moveis
-         WHERE id = :id AND cnpj = :cnpj
+         WHERE id = :id AND cnpj = :cnpj AND created_by = :usuario_id
 		 AND created_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)
          LIMIT 1"
     );
-    $stmtVerifica->bindParam(':id',   $id_bem,      PDO::PARAM_INT);
-    $stmtVerifica->bindParam(':cnpj', $cnpj_logado, PDO::PARAM_STR);
+    // created_by: mesma regra da busca — o usuário só exclui bens que ele cadastrou
+    $stmtVerifica->bindParam(':id',         $id_bem,                 PDO::PARAM_INT);
+    $stmtVerifica->bindParam(':cnpj',       $cnpj_logado,            PDO::PARAM_STR);
+    $stmtVerifica->bindParam(':usuario_id', $_SESSION['usuario_id'], PDO::PARAM_INT);
     $stmtVerifica->execute();
 
     $bem = $stmtVerifica->fetch(PDO::FETCH_ASSOC);
